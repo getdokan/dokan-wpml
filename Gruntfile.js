@@ -76,10 +76,7 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks( 'grunt-contrib-compress' );
 
     grunt.registerTask( 'release', [
-        'makepot',
-        'clean',
-        'copy',
-        'compress'
+        'makepot'
     ]);
 
     grunt.registerTask( 'zip', [
