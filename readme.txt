@@ -3,7 +3,7 @@ Contributors: wedevs, rafsuntaskin, sabbir1991
 Tags: WPML, i18n, l10n, Translation, Dokan
 Donate link: https://tareq.co/donate
 Requires at least: 4.7
-Tested up to: 4.7.4
+Tested up to: 4.7.2
 License: GPL v2
 
 WPML integration for Dokan Multivendor Plugin

@@ -57,7 +57,6 @@ class Dokan_WPML {
      * @uses add_action()
      */
     public function __construct() {
-
         add_action( 'init', array( $this, 'is_dependency_installed' ) );
 
         // Localize our plugin
@@ -96,8 +95,9 @@ class Dokan_WPML {
         }
     }
 
-    /*
-     * print error notice if dependency not active
+    /**
+     * Print error notice if dependency not active
+     *
      * @since 1.0.0
      */
     function need_dependency(){
@@ -131,13 +131,12 @@ class Dokan_WPML {
     public function enqueue_scripts() {
         wp_enqueue_style( 'dokan-wpml-styles', plugins_url( 'assets/css/style.css', __FILE__ ), false, date( 'Ymd' ) );
         wp_enqueue_script( 'dokan-wpml-scripts', plugins_url( 'assets/js/script.js', __FILE__ ), array( 'jquery' ), false, true );
-
     }
 
     /**
     * Redirect seller setup wizerd into translated url
     *
-    * @since 1.0
+    * @since 1.0.0
     *
     * @return void
     **/
@@ -149,13 +148,14 @@ class Dokan_WPML {
     /**
      * Load custom wpml translated page url
      *
+     * @since 1.0.0
+     *
      * @param  string $url
      * @param  string $name
      *
      * @return string
      */
     function load_translated_url( $url, $name ) {
-
         if ( function_exists('wpml_object_id_filter') ) {
             $page_id = dokan_get_option( 'dashboard', 'dokan_pages' );
 
@@ -172,12 +172,14 @@ class Dokan_WPML {
 
     /**
      * Filter dokan navigation url for specific language
+     *
+     * @since 1.0.0
+     *
      * @param  string $language
      *
      * @return string [$url]
      */
     function get_dokan_url_for_language( $language ) {
-
         $post_id = dokan_get_option( 'dashboard', 'dokan_pages' );
         $lang_post_id = wpml_object_id_filter( $post_id , 'page', true, $language );
 
@@ -194,6 +196,8 @@ class Dokan_WPML {
 
     /**
      * Add Dokan Dashboard body class when change language
+     *
+     * @since 1.0.0
      *
      * @param array $classes
      */
@@ -220,6 +224,8 @@ class Dokan_WPML {
     /**
      * Load All dashboard styles and scripts
      *
+     * @since 1.0.0
+     *
      * @return void
      */
     function load_scripts_and_style() {
@@ -241,7 +247,6 @@ class Dokan_WPML {
 
         return false;
     }
-
 
 } // Dokan_WPML
 
