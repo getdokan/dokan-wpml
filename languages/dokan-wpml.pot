@@ -1,0 +1,36 @@
+# Copyright (C) 2017 weDevs
+# This file is distributed under the GPL2.
+msgid ""
+msgstr ""
+"Project-Id-Version: Dokan - WPML Integration 1.0.0\n"
+"Report-Msgid-Bugs-To: http://wedevs.com/support/\n"
+"POT-Creation-Date: 2017-02-27 03:35:59+00:00\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2017-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
+"X-Generator: grunt-wp-i18n 0.4.9\n"
+
+#: dokan-wpml.php:104
+msgid ""
+"<b>Dokan - WPML Integration</b> requires %sDokan plugin%s to be installed & "
+"activated!"
+msgstr ""
+
+#. Plugin Name of the plugin/theme
+msgid "Dokan - WPML Integration"
+msgstr ""
+
+#. Author URI of the plugin/theme
+msgid "https://wedevs.com/"
+msgstr ""
+
+#. Description of the plugin/theme
+msgid "WPML and Dokan compitable package"
+msgstr ""
+
+#. Author of the plugin/theme
+msgid "weDevs"
+msgstr ""
