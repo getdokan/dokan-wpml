@@ -66,6 +66,7 @@ class Dokan_WPML {
         add_filter( 'dokan_force_load_extra_args', array( $this, 'load_scripts_and_style') );
         add_filter( 'dokan_seller_setup_wizard_url', array( $this, 'render_wmpl_home_url' ), 70 );
         add_filter( 'dokan_get_page_url', array( $this, 'reflect_page_url' ), 10, 3 );
+        add_filter( 'dokan_get_terms_condition_url', array( $this, 'get_terms_condition_url' ), 10, 2 );
         add_filter( 'dokan_redirect_login', array( $this, 'redirect_if_not_login' ), 90 );
         add_filter( 'dokan_force_page_redirect', array( $this, 'force_redirect_page' ), 90, 2 );
 
@@ -169,6 +170,19 @@ class Dokan_WPML {
     public function reflect_page_url( $url, $page_id, $context ) {
         $lang_post_id = wpml_object_id_filter( $page_id , 'page', true, ICL_LANGUAGE_CODE );
         return get_permalink( $lang_post_id );
+    }
+
+    /**
+    * Get terms and condition page url
+    *
+    * @since 1.0.1
+    *
+    * @return url
+    **/
+    public function get_terms_condition_url( $url, $page_id ) {
+        $page_id = wpml_object_id_filter( $page_id , 'page', true, ICL_LANGUAGE_CODE );
+
+        return get_permalink( $page_id );
     }
 
     /**
