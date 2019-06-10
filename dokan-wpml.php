@@ -35,8 +35,7 @@ License: GPL2
  * **********************************************************************
  */
 
-// don't call the file directly
-if ( !defined( 'ABSPATH' ) ) exit;
+defined( 'ABSPATH' ) || exit;
 
 /**
  * Dokan_WPML class
@@ -57,7 +56,7 @@ class Dokan_WPML {
      * @uses add_action()
      */
     public function __construct() {
-        add_action( 'init', array( $this, 'is_dependency_installed' ) );
+        register_activation_hook( __FILE__, array( $this, 'dependency_missing_notice' ) );
 
         // Localize our plugin
         add_action( 'init', array( $this, 'localization_setup' ) );
@@ -91,26 +90,27 @@ class Dokan_WPML {
         return $instance;
     }
 
-
-    function is_dependency_installed(){
-        if ( !class_exists( 'WeDevs_Dokan' )){
-            add_action( 'admin_notices', array ( $this, 'need_dependency' ) );
-        }
-    }
-
     /**
      * Print error notice if dependency not active
      *
-     * @since 1.0.0
+     * @since 1.0.1
+     *
+     * @return void
      */
-    function need_dependency(){
-        $error = sprintf( __( '<b>Dokan - WPML Integration</b> requires %sDokan plugin%s to be installed & activated!' , 'dokan-wpml' ), '<a target="_blank" href="https://wedevs.com/products/plugins/dokan/">', '</a>' );
-
-        $message = '<div class="error"><p>' . $error . '</p></div>';
-
-        echo $message;
-
+    public function dependency_missing_notice() {
         deactivate_plugins( plugin_basename( __FILE__ ) );
+
+        if ( ! class_exists( 'WeDevs_Dokan' ) ) {
+            $error   = sprintf( __( '<b>Dokan - WPML Integration</b> requires %sDokan plugin%s to be installed & activated!' , 'dokan-wpml' ), '<a target="_blank" href="https://wedevs.com/products/plugins/dokan/">', '</a>' );
+            $message = '<div class="error"><p>' . $error . '</p></div>';
+            wp_die( $message );
+        }
+
+        if ( ! class_exists( 'SitePress' ) ) {
+            $error   = sprintf( __( '<b>Dokan - WPML Integration</b> requires %sWPML Multilingual CMS%s to be installed & activated!' , 'dokan-wpml' ), '<a target="_blank" href="https://wpml.org/">', '</a>' );
+            $message = '<div class="error"><p>' . $error . '</p></div>';
+            wp_die( $message );
+        }
     }
 
     /**
@@ -166,7 +166,7 @@ class Dokan_WPML {
     *
     * @return void
     **/
-    function reflect_page_url( $url, $page_id, $context ) {
+    public function reflect_page_url( $url, $page_id, $context ) {
         $lang_post_id = wpml_object_id_filter( $page_id , 'page', true, ICL_LANGUAGE_CODE );
         return get_permalink( $lang_post_id );
     }
@@ -178,7 +178,7 @@ class Dokan_WPML {
     *
     * @return void
     **/
-    function redirect_if_not_login( $url ) {
+    public function redirect_if_not_login( $url ) {
         $page_id = wc_get_page_id( 'myaccount' );
         $lang_post_id = wpml_object_id_filter( $page_id , 'page', true, ICL_LANGUAGE_CODE );
         return get_permalink( $lang_post_id );
@@ -191,7 +191,7 @@ class Dokan_WPML {
     *
     * @return void
     **/
-    function force_redirect_page( $flag, $page_id ) {
+    public function force_redirect_page( $flag, $page_id ) {
         $lang_post_id = wpml_object_id_filter( $page_id , 'page', true, ICL_LANGUAGE_CODE );
 
         if ( is_page( $lang_post_id ) ) {
@@ -210,7 +210,7 @@ class Dokan_WPML {
      *
      * @return string [$url]
      */
-    function get_dokan_url_for_language( $language ) {
+    public function get_dokan_url_for_language( $language ) {
         $post_id = dokan_get_option( 'dashboard', 'dokan_pages' );
         $lang_post_id = wpml_object_id_filter( $post_id , 'page', true, $language );
 
@@ -232,7 +232,7 @@ class Dokan_WPML {
      *
      * @param array $classes
      */
-    function add_dashboard_template_class_if_wpml( $classes ) {
+    public function add_dashboard_template_class_if_wpml( $classes ) {
         if ( function_exists('wpml_object_id_filter') ) {
             global $post;
 
@@ -259,7 +259,7 @@ class Dokan_WPML {
      *
      * @return void
      */
-    function load_scripts_and_style() {
+    public function load_scripts_and_style() {
         if ( function_exists('wpml_object_id_filter') ) {
             global $post;
 
@@ -267,9 +267,9 @@ class Dokan_WPML {
                 return false;
             }
 
-            $default_lang = apply_filters('wpml_default_language', NULL );
+            $default_lang    = apply_filters('wpml_default_language', NULL );
             $current_page_id = wpml_object_id_filter( $post->ID,'page',false, $default_lang );
-            $page_id = dokan_get_option( 'dashboard', 'dokan_pages' );
+            $page_id         = dokan_get_option( 'dashboard', 'dokan_pages' );
 
             if ( ( $current_page_id == $page_id ) || ( get_query_var( 'edit' ) && is_singular( 'product' ) ) ) {
                 return true;
@@ -281,8 +281,8 @@ class Dokan_WPML {
 
 } // Dokan_WPML
 
-add_action( 'dokan_loaded', 'dokan_load_wpml', 15 );
-
 function dokan_load_wpml() {
     $dokan_wpml = Dokan_WPML::init();
 }
+
+dokan_load_wpml();
