@@ -4,6 +4,7 @@ tests
 nbproject
 Gruntfile.js
 package.json
+package-lock.json
 docs.md
 changelog.txt
 .gitignore

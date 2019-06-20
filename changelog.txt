@@ -1,3 +1,10 @@
+v1.0.1 -> June 20, 2019
+------------------------
+ - [Fix]   My account page redirecting issue
+ - [Fix]   Dokan term and condition page url fixed
+ - [Fix]   Fix js issue when wpml activate in dokan core
+ - [Tweak] Show error notice if WPML is not activated
+
 v1.0.0 -> February 27, 2017
 ===================
  - Initial release
