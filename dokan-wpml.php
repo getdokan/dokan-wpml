@@ -3,7 +3,7 @@
 Plugin Name: Dokan - WPML Integration
 Plugin URI: https://wedevs.com/
 Description: WPML and Dokan compitable package
-Version: 1.0.0
+Version: 1.0.1
 Author: weDevs
 Author URI: https://wedevs.com/
 License: GPL2
