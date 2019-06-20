@@ -1,10 +1,15 @@
 === Dokan WPML ===
-Contributors: wedevs, rafsuntaskin, sabbir1991
+Contributors: wedevs, sabbir1991, rafsuntaskin,
 Tags: WPML, i18n, l10n, Translation, Dokan
 Donate link: https://tareq.co/donate
 Requires at least: 4.7
-Tested up to: 4.7.2
+Tested up to: 5.2.2
+WC requires at least: 3.0
+WC tested up to: 3.6.4
+Requires PHP: 5.6
+Stable tag: trunk
 License: GPL v2
+License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
 WPML integration for Dokan Multivendor Plugin
 
@@ -46,6 +51,14 @@ Ans: Yes, you can contact the WPML team. They offer translation service via thir
 nothing here
 
 == Changelog ==
-**v1.0 -> Jan 27, 2017**
 
-* Initial Release
+v1.0.1 -> June 20, 2019
+------------------------
+ - [Fix]   My account page redirecting issue
+ - [Fix]   Dokan term and condition page url fixed
+ - [Fix]   Fix js issue when wpml activate in dokan core
+ - [Tweak] Show error notice if WPML is not activated
+
+v1.0 -> Jan 27, 2017
+-----------------------
+- Initial Release

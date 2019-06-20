@@ -7,3 +7,5 @@ includes/.DS_Store
 .idea
 plugin-deploy.sh
 secret.json
+.svnignore
+package-lock.json
