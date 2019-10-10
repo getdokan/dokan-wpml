@@ -73,6 +73,7 @@ class Dokan_WPML {
         // Load all filters hook
         add_filter( 'dokan_get_navigation_url', array( $this, 'load_translated_url' ), 10 ,2 );
         add_filter( 'body_class', array( $this, 'add_dashboard_template_class_if_wpml' ), 99 );
+        add_filter( 'dokan_get_current_page_id', [ $this, 'dokan_set_current_page_id' ] );
     }
 
     /**
@@ -291,6 +292,19 @@ class Dokan_WPML {
         }
 
         return false;
+    }
+
+    /**
+     * Dokan set current page id
+     *
+     * @since 1.0.2
+     *
+     * @param  int page_id
+     *
+     * @return int
+     */
+    public function dokan_set_current_page_id( $page_id ) {
+        return wpml_object_id_filter( $page_id, 'page', true, wpml_get_default_language() );
     }
 
 } // Dokan_WPML
