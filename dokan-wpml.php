@@ -169,8 +169,13 @@ class Dokan_WPML {
     * @return void
     **/
     public function reflect_page_url( $url, $page_id, $context ) {
-        $lang_post_id = wpml_object_id_filter( $page_id , 'page', true, ICL_LANGUAGE_CODE );
-        return get_permalink( $lang_post_id );
+        if ( ! function_exists( 'wpml_object_id_filter' ) ) {
+            return $url;
+        }
+
+        $page_id = wpml_object_id_filter( $page_id , 'page', true, ICL_LANGUAGE_CODE );
+
+        return get_permalink( $page_id );
     }
 
     /**
@@ -181,6 +186,10 @@ class Dokan_WPML {
     * @return url
     **/
     public function get_terms_condition_url( $url, $page_id ) {
+        if ( ! function_exists( 'wpml_object_id_filter' ) ) {
+            return $url;
+        }
+
         $page_id = wpml_object_id_filter( $page_id , 'page', true, ICL_LANGUAGE_CODE );
 
         return get_permalink( $page_id );
@@ -194,8 +203,13 @@ class Dokan_WPML {
     * @return void
     **/
     public function redirect_if_not_login( $url ) {
-        $page_id = wc_get_page_id( 'myaccount' );
+        if ( ! function_exists( 'wpml_object_id_filter' ) ) {
+            return $url;
+        }
+
+        $page_id      = wc_get_page_id( 'myaccount' );
         $lang_post_id = wpml_object_id_filter( $page_id , 'page', true, ICL_LANGUAGE_CODE );
+
         return get_permalink( $lang_post_id );
     }
 
@@ -207,6 +221,10 @@ class Dokan_WPML {
     * @return void
     **/
     public function force_redirect_page( $flag, $page_id ) {
+        if ( ! function_exists( 'wpml_object_id_filter' ) ) {
+            return false;
+        }
+
         $lang_post_id = wpml_object_id_filter( $page_id , 'page', true, ICL_LANGUAGE_CODE );
 
         if ( is_page( $lang_post_id ) ) {
@@ -227,7 +245,11 @@ class Dokan_WPML {
      */
     public function get_dokan_url_for_language( $language ) {
         $post_id = dokan_get_option( 'dashboard', 'dokan_pages' );
-        $lang_post_id = wpml_object_id_filter( $post_id , 'page', true, $language );
+        $lang_post_id = '';
+
+        if ( function_exists( 'wpml_object_id_filter' ) ) {
+            $lang_post_id = wpml_object_id_filter( $post_id , 'page', true, $language );
+        }
 
         $url = "";
         if ($lang_post_id != 0) {
@@ -304,6 +326,10 @@ class Dokan_WPML {
      * @return int
      */
     public function dokan_set_current_page_id( $page_id ) {
+        if ( ! function_exists( 'wpml_object_id_filter' ) ) {
+            return $page_id;
+        }
+
         return wpml_object_id_filter( $page_id, 'page', true, wpml_get_default_language() );
     }
 
