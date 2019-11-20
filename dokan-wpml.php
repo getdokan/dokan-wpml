@@ -333,6 +333,30 @@ class Dokan_WPML {
         return wpml_object_id_filter( $page_id, 'page', true, wpml_get_default_language() );
     }
 
+    /**
+     * Get raw value from database
+     *
+     * @since  DOKAN_WPML_SINCE
+     *
+     * @param  string $option
+     * @param  string $section
+     * @param  mix $default
+     *
+     * @return mix
+     */
+    public function get_raw_option( $option, $section, $default = '' ) {
+        if ( ! class_exists( 'WPML_Multilingual_Options_Utils' ) ) {
+            return $default;
+        }
+
+        global $wpdb;
+
+        $util    = new WPML_Multilingual_Options_Utils( $wpdb );
+        $options = $util->get_option_without_filtering( $section );
+
+        return isset( $options[ $option ] ) ? $options[ $option ] : $default;
+    }
+
 } // Dokan_WPML
 
 function dokan_load_wpml() {
