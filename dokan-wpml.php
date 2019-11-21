@@ -345,7 +345,7 @@ class Dokan_WPML {
      */
     public function get_raw_option( $option, $section, $default = '' ) {
         if ( ! class_exists( 'WPML_Multilingual_Options_Utils' ) ) {
-            return $default;
+            return dokan_get_option( $option, $section, $default );
         }
 
         global $wpdb;
