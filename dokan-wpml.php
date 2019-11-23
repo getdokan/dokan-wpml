@@ -147,15 +147,14 @@ class Dokan_WPML {
      * @return string
      */
     function load_translated_url( $url, $name ) {
-        if ( function_exists('wpml_object_id_filter') ) {
-            $page_id = dokan_get_option( 'dashboard', 'dokan_pages' );
-
-            if ( ! empty( $name ) ) {
-                $url = $this->get_dokan_url_for_language( ICL_LANGUAGE_CODE ).$name.'/';
-            } else {
-                $url = $this->get_dokan_url_for_language( ICL_LANGUAGE_CODE );
-            }
+        if ( ! function_exists( 'wpml_object_id_filter' ) ) {
             return $url;
+        }
+
+        if ( ! empty( $name ) ) {
+            $url = $this->get_dokan_url_for_language( ICL_LANGUAGE_CODE ).$name.'/';
+        } else {
+            $url = $this->get_dokan_url_for_language( ICL_LANGUAGE_CODE );
         }
 
         return $url;
@@ -169,8 +168,13 @@ class Dokan_WPML {
     * @return void
     **/
     public function reflect_page_url( $url, $page_id, $context ) {
-        $lang_post_id = wpml_object_id_filter( $page_id , 'page', true, ICL_LANGUAGE_CODE );
-        return get_permalink( $lang_post_id );
+        if ( ! function_exists( 'wpml_object_id_filter' ) ) {
+            return $url;
+        }
+
+        $page_id = wpml_object_id_filter( $page_id , 'page', true, ICL_LANGUAGE_CODE );
+
+        return get_permalink( $page_id );
     }
 
     /**
@@ -181,6 +185,10 @@ class Dokan_WPML {
     * @return url
     **/
     public function get_terms_condition_url( $url, $page_id ) {
+        if ( ! function_exists( 'wpml_object_id_filter' ) ) {
+            return $url;
+        }
+
         $page_id = wpml_object_id_filter( $page_id , 'page', true, ICL_LANGUAGE_CODE );
 
         return get_permalink( $page_id );
@@ -194,8 +202,13 @@ class Dokan_WPML {
     * @return void
     **/
     public function redirect_if_not_login( $url ) {
-        $page_id = wc_get_page_id( 'myaccount' );
+        if ( ! function_exists( 'wpml_object_id_filter' ) ) {
+            return $url;
+        }
+
+        $page_id      = wc_get_page_id( 'myaccount' );
         $lang_post_id = wpml_object_id_filter( $page_id , 'page', true, ICL_LANGUAGE_CODE );
+
         return get_permalink( $lang_post_id );
     }
 
@@ -207,6 +220,10 @@ class Dokan_WPML {
     * @return void
     **/
     public function force_redirect_page( $flag, $page_id ) {
+        if ( ! function_exists( 'wpml_object_id_filter' ) ) {
+            return false;
+        }
+
         $lang_post_id = wpml_object_id_filter( $page_id , 'page', true, ICL_LANGUAGE_CODE );
 
         if ( is_page( $lang_post_id ) ) {
@@ -226,17 +243,21 @@ class Dokan_WPML {
      * @return string [$url]
      */
     public function get_dokan_url_for_language( $language ) {
-        $post_id = dokan_get_option( 'dashboard', 'dokan_pages' );
-        $lang_post_id = wpml_object_id_filter( $post_id , 'page', true, $language );
+        $post_id      = $this->get_raw_option( 'dashboard', 'dokan_pages' );
+        $lang_post_id = '';
+
+        if ( function_exists( 'wpml_object_id_filter' ) ) {
+            $lang_post_id = wpml_object_id_filter( $post_id , 'page', true, $language );
+        }
 
         $url = "";
-        if ($lang_post_id != 0) {
+
+        if ( $lang_post_id != 0 ) {
             $url = get_permalink( $lang_post_id );
         } else {
-            // No page found, it's most likely the homepage
             $url = apply_filters( 'wpml_home_url', get_option( 'home' ) );
-
         }
+
         return $url;
     }
 
@@ -248,22 +269,23 @@ class Dokan_WPML {
      * @param array $classes
      */
     public function add_dashboard_template_class_if_wpml( $classes ) {
-        if ( function_exists('wpml_object_id_filter') ) {
-            global $post;
-
-            if( !$post ) {
-                return $classes;
-            }
-
-            $default_lang = apply_filters('wpml_default_language', NULL );
-
-            $current_page_id = wpml_object_id_filter( $post->ID,'page',false, $default_lang );
-            $page_id         = dokan_get_option( 'dashboard', 'dokan_pages' );
-
-            if ( ( $current_page_id == $page_id ) ) {
-                $classes[] = 'dokan-dashboard';
-            }
+        if ( ! function_exists( 'wpml_object_id_filter' ) ) {
+            return $classes;
         }
+
+        global $post;
+
+        if ( ! is_object( $post ) ) {
+            return $classes;
+        }
+
+        $page_id         = $this->get_raw_option( 'dashboard', 'dokan_pages' );
+        $current_page_id = wpml_object_id_filter( $post->ID, 'page', true, wpml_get_default_language() );
+
+        if ( ( $current_page_id == $page_id ) ) {
+            $classes[] = 'dokan-dashboard';
+        }
+
         return $classes;
     }
 
@@ -275,23 +297,22 @@ class Dokan_WPML {
      * @return void
      */
     public function load_scripts_and_style() {
-        if ( function_exists('wpml_object_id_filter') ) {
-            global $post;
-
-            if( !$post ) {
-                return false;
-            }
-
-            $default_lang    = apply_filters('wpml_default_language', NULL );
-            $current_page_id = wpml_object_id_filter( $post->ID,'page',false, $default_lang );
-            $page_id         = dokan_get_option( 'dashboard', 'dokan_pages' );
-
-            if ( ( $current_page_id == $page_id ) || ( get_query_var( 'edit' ) && is_singular( 'product' ) ) ) {
-                return true;
-            }
+        if ( ! function_exists( 'wpml_object_id_filter' ) ) {
+            return false;
         }
 
-        return false;
+        global $post;
+
+        if ( ! is_object( $post ) ) {
+            return false;
+        }
+
+        $page_id         = $this->get_raw_option( 'dashboard', 'dokan_pages' );
+        $current_page_id = wpml_object_id_filter( $post->ID, 'page', true, wpml_get_default_language() );
+
+        if ( ( $current_page_id == $page_id ) || ( get_query_var( 'edit' ) && is_singular( 'product' ) ) ) {
+            return true;
+        }
     }
 
     /**
@@ -304,7 +325,35 @@ class Dokan_WPML {
      * @return int
      */
     public function dokan_set_current_page_id( $page_id ) {
+        if ( ! function_exists( 'wpml_object_id_filter' ) ) {
+            return $page_id;
+        }
+
         return wpml_object_id_filter( $page_id, 'page', true, wpml_get_default_language() );
+    }
+
+    /**
+     * Get raw value from database
+     *
+     * @since  DOKAN_WPML_SINCE
+     *
+     * @param  string $option
+     * @param  string $section
+     * @param  mix $default
+     *
+     * @return mix
+     */
+    public function get_raw_option( $option, $section, $default = '' ) {
+        if ( ! class_exists( 'WPML_Multilingual_Options_Utils' ) ) {
+            return dokan_get_option( $option, $section, $default );
+        }
+
+        global $wpdb;
+
+        $util    = new WPML_Multilingual_Options_Utils( $wpdb );
+        $options = $util->get_option_without_filtering( $section );
+
+        return isset( $options[ $option ] ) ? $options[ $option ] : $default;
     }
 
 } // Dokan_WPML
