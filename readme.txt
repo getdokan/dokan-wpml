@@ -3,9 +3,9 @@ Contributors: wedevs, sabbir1991, rafsuntaskin,
 Tags: WPML, i18n, l10n, Translation, Dokan
 Donate link: https://tareq.co/donate
 Requires at least: 4.7
-Tested up to: 5.2.2
+Tested up to: 5.3.0
 WC requires at least: 3.0
-WC tested up to: 3.6.4
+WC tested up to: 3.8.0
 Requires PHP: 5.6
 Stable tag: trunk
 License: GPL v2
@@ -51,6 +51,13 @@ Ans: Yes, you can contact the WPML team. They offer translation service via thir
 nothing here
 
 == Changelog ==
+
+v1.0.2 -> November 23, 2019
+---------------------------
+ - [Fix]   Color customizer and order page is not loading
+ - [Fix]   Undefined function calling error
+ - [Fix]   wpml is not working when string translation is enabled
+ - [Tweak] Add get_raw_option functions for getting raw value from database
 
 v1.0.1 -> June 20, 2019
 ------------------------

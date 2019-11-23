@@ -1,3 +1,10 @@
+v1.0.2 -> November 23, 2019
+---------------------------
+ - [Fix]   Color customizer and order page is not loading
+ - [Fix]   Undefined function calling error
+ - [Fix]   wpml is not working when string translation is enabled
+ - [Tweak] Add get_raw_option functions for getting raw value from database
+
 v1.0.1 -> June 20, 2019
 ------------------------
  - [Fix]   My account page redirecting issue
