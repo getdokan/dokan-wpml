@@ -48,6 +48,13 @@ defined( 'ABSPATH' ) || exit;
  */
 class Dokan_WPML {
 
+    /*
+     * WordPress Endpoints text domain
+     * 
+     * @var string
+     */
+    public $wp_endpoints = 'WP Endpoints';
+
     /**
      * Constructor for the Dokan_WPML class
      *
@@ -78,6 +85,7 @@ class Dokan_WPML {
         add_filter( 'dokan_get_navigation_url', array( $this, 'load_translated_url' ), 10 ,2 );
         add_filter( 'body_class', array( $this, 'add_dashboard_template_class_if_wpml' ), 99 );
         add_filter( 'dokan_get_current_page_id', [ $this, 'dokan_set_current_page_id' ] );
+        add_filter( 'dokan_get_dashboard_nav', array( $this, 'replace_dokan_dashboard_nav_key' ) );
     }
 
     /**
@@ -151,17 +159,56 @@ class Dokan_WPML {
      * @return string
      */
     function load_translated_url( $url, $name ) {
+        $current_lang = apply_filters( 'wpml_current_language', NULL );
+
         if ( ! function_exists( 'wpml_object_id_filter' ) ) {
             return $url;
         }
 
         if ( ! empty( $name ) ) {
+
+            if ( $current_lang ) {
+                $name_arr = explode( '/', $name );
+
+                if ( isset( $name_arr[1] ) ) {
+                    $name = apply_filters( 'wpml_translate_single_string', $name_arr[0], $this->wp_endpoints, $name_arr[0], $current_lang ).'/'.$name_arr[1];
+                } else {
+                    $get_name = ( ! empty( $name_arr[0] ) ) ? $name_arr[0] : $name;
+                    $name     = apply_filters( 'wpml_translate_single_string', $get_name, $this->wp_endpoints, $get_name, $current_lang );
+                }
+            }
+
             $url = $this->get_dokan_url_for_language( ICL_LANGUAGE_CODE ).$name.'/';
+
         } else {
             $url = $this->get_dokan_url_for_language( ICL_LANGUAGE_CODE );
         }
 
         return $url;
+    }
+
+    /**
+     * Replace dashboard key language wise
+     *
+     * @param array $urls
+     *
+     * @since 2.4
+     *
+     * @return array $urls
+     */
+    public function replace_dokan_dashboard_nav_key( $urls ) {
+        $current_lang = apply_filters( 'wpml_current_language', NULL );
+        $new_urls     = $urls;
+        
+        foreach ( $urls as $get_key => $item ) {
+            $new_key       = apply_filters( 'wpml_translate_single_string', $get_key, $this->wp_endpoints, $get_key, $current_lang );
+            if ( $get_key != $new_key ) {
+                $new_urls[$new_key] = $new_urls[$get_key];
+                unset($new_urls[$get_key]);
+            }
+        }
+
+        return $new_urls;
     }
 
     /**
