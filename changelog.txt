@@ -1,3 +1,10 @@
+v1.0.3 -> December 03, 2020
+---------------------------
+ - [fix] Vendor dashboard page all links coming 404 error fixed
+ - [fix] Vendor dashboard all url slug missing on url issue fixed
+ - [fix] Fatal error when dokan plugin deactivated
+ - [fix] Improve coding structure
+
 v1.0.2 -> November 23, 2019
 ---------------------------
  - [Fix]   Color customizer and order page is not loading
