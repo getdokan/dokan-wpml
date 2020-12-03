@@ -410,13 +410,15 @@ class Dokan_WPML {
 
     /**
      * Remove callback links with WPML on vendor dashboard
+     *
+     * @since DOKAN_WPML_SINCE
      */
     public function dokan_wpml_remove_fix_fallback_links() {
         if ( function_exists( 'dokan_is_seller_dashboard' ) && ! dokan_is_seller_dashboard() ) {
             return;
         }
 
-        if ( ! class_exists( 'WPML_Fix_Links_In_Display_As_Translated_Content' ) ) {
+        if ( ! class_exists( 'WPML_Fix_Links_In_Display_As_Translated_Content' ) || ! function_exists( 'dokan_remove_hook_for_anonymous_class' ) ) {
             return;
         }
 
