@@ -8,7 +8,7 @@ Author: weDevs
 Author URI: https://wedevs.com/
 Text Domain: dokan-wpml
 WC requires at least: 3.0
-WC tested up to: 3.8.0
+WC tested up to: 4.7.1
 Domain Path: /languages/
 License: GPL2
 */
@@ -387,7 +387,7 @@ class Dokan_WPML {
     /**
      * Get raw value from database
      *
-     * @since  DOKAN_WPML_SINCE
+     * @since  1.0.3
      *
      * @param  string $option
      * @param  string $section
@@ -411,7 +411,7 @@ class Dokan_WPML {
     /**
      * Remove callback links with WPML on vendor dashboard
      *
-     * @since DOKAN_WPML_SINCE
+     * @since 1.0.3
      */
     public function dokan_wpml_remove_fix_fallback_links() {
         if ( function_exists( 'dokan_is_seller_dashboard' ) && ! dokan_is_seller_dashboard() ) {
