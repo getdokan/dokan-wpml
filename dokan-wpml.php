@@ -67,25 +67,26 @@ class Dokan_WPML {
      * @uses add_action()
      */
     public function __construct() {
-        register_activation_hook( __FILE__, array( $this, 'dependency_missing_notice' ) );
+        register_activation_hook( __FILE__, [ $this, 'dependency_missing_notice' ] );
 
         // Localize our plugin
-        add_action( 'init', array( $this, 'localization_setup' ) );
+        add_action( 'init', [ $this, 'localization_setup' ] );
 
         // Load all actions hook
-        add_filter( 'dokan_forced_load_scripts', array( $this, 'load_scripts_and_style') );
-        add_filter( 'dokan_force_load_extra_args', array( $this, 'load_scripts_and_style') );
-        add_filter( 'dokan_seller_setup_wizard_url', array( $this, 'render_wmpl_home_url' ), 70 );
-        add_filter( 'dokan_get_page_url', array( $this, 'reflect_page_url' ), 10, 3 );
-        add_filter( 'dokan_get_terms_condition_url', array( $this, 'get_terms_condition_url' ), 10, 2 );
-        add_filter( 'dokan_redirect_login', array( $this, 'redirect_if_not_login' ), 90 );
-        add_filter( 'dokan_force_page_redirect', array( $this, 'force_redirect_page' ), 90, 2 );
+        add_filter( 'dokan_forced_load_scripts', [ $this, 'load_scripts_and_style' ] );
+        add_filter( 'dokan_force_load_extra_args', [ $this, 'load_scripts_and_style' ] );
+        add_filter( 'dokan_seller_setup_wizard_url', [ $this, 'render_wmpl_home_url' ], 70 );
+        add_filter( 'dokan_get_page_url', [ $this, 'reflect_page_url' ], 10, 3 );
+        add_filter( 'dokan_get_terms_condition_url', [ $this, 'get_terms_condition_url' ], 10, 2 );
+        add_filter( 'dokan_redirect_login', [ $this, 'redirect_if_not_login' ], 90 );
+        add_filter( 'dokan_force_page_redirect', [ $this, 'force_redirect_page' ], 90, 2 );
 
         // Load all filters hook
-        add_filter( 'dokan_get_navigation_url', array( $this, 'load_translated_url' ), 10 ,2 );
-        add_filter( 'body_class', array( $this, 'add_dashboard_template_class_if_wpml' ), 99 );
+        add_filter( 'dokan_get_navigation_url', [ $this, 'load_translated_url' ], 10 ,2 );
+        add_filter( 'body_class', [ $this, 'add_dashboard_template_class_if_wpml' ], 99 );
         add_filter( 'dokan_get_current_page_id', [ $this, 'dokan_set_current_page_id' ] );
-        add_filter( 'dokan_get_dashboard_nav', array( $this, 'replace_dokan_dashboard_nav_key' ) );
+        add_filter( 'dokan_get_dashboard_nav', [ $this, 'replace_dokan_dashboard_nav_key' ] );
+        add_action( 'wp_head', [ $this, 'dokan_wpml_remove_fix_fallback_links' ] );
     }
 
     /**
@@ -137,12 +138,12 @@ class Dokan_WPML {
     }
 
     /**
-    * Redirect seller setup wizerd into translated url
-    *
-    * @since 1.0.0
-    *
-    * @return void
-    **/
+     * Redirect seller setup wizerd into translated url
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
     public function render_wmpl_home_url( $url ) {
         $translated_url = apply_filters( 'wpml_home_url', $url );
         return add_query_arg( array( 'page' => 'dokan-seller-setup' ), $translated_url );
@@ -212,12 +213,12 @@ class Dokan_WPML {
     }
 
     /**
-    * Reflect page url
-    *
-    * @since 1.0.1
-    *
-    * @return void
-    **/
+     * Reflect page url
+     *
+     * @since 1.0.1
+     *
+     * @return void
+     */
     public function reflect_page_url( $url, $page_id, $context ) {
         if ( ! function_exists( 'wpml_object_id_filter' ) ) {
             return $url;
@@ -229,12 +230,12 @@ class Dokan_WPML {
     }
 
     /**
-    * Get terms and condition page url
-    *
-    * @since 1.0.1
-    *
-    * @return url
-    **/
+     * Get terms and condition page url
+     *
+     * @since 1.0.1
+     *
+     * @return url
+     */
     public function get_terms_condition_url( $url, $page_id ) {
         if ( ! function_exists( 'wpml_object_id_filter' ) ) {
             return $url;
@@ -246,12 +247,12 @@ class Dokan_WPML {
     }
 
     /**
-    * Redirect if not login
-    *
-    * @since 1.0.1
-    *
-    * @return void
-    **/
+     * Redirect if not login
+     *
+     * @since 1.0.1
+     *
+     * @return void
+     */
     public function redirect_if_not_login( $url ) {
         if ( ! function_exists( 'wpml_object_id_filter' ) ) {
             return $url;
@@ -264,12 +265,12 @@ class Dokan_WPML {
     }
 
     /**
-    * undocumented function
-    *
-    * @since 1.0.1
-    *
-    * @return void
-    **/
+     * Undocumented function
+     *
+     * @since 1.0.1
+     *
+     * @return void
+     */
     public function force_redirect_page( $flag, $page_id ) {
         if ( ! function_exists( 'wpml_object_id_filter' ) ) {
             return false;
@@ -405,6 +406,21 @@ class Dokan_WPML {
         $options = $util->get_option_without_filtering( $section );
 
         return isset( $options[ $option ] ) ? $options[ $option ] : $default;
+    }
+
+    /**
+     * Remove callback links with WPML on vendor dashboard
+     */
+    public function dokan_wpml_remove_fix_fallback_links() {
+        if ( function_exists( 'dokan_is_seller_dashboard' ) && ! dokan_is_seller_dashboard() ) {
+            return;
+        }
+
+        if ( ! class_exists( 'WPML_Fix_Links_In_Display_As_Translated_Content' ) ) {
+            return;
+        }
+
+        dokan_remove_hook_for_anonymous_class( 'the_content', 'WPML_Fix_Links_In_Display_As_Translated_Content', 'fix_fallback_links', 99 );
     }
 
 } // Dokan_WPML
