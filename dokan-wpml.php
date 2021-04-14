@@ -50,7 +50,7 @@ class Dokan_WPML {
 
     /*
      * WordPress Endpoints text domain
-     * 
+     *
      * @var string
      */
     public $wp_endpoints = 'WP Endpoints';
@@ -87,6 +87,8 @@ class Dokan_WPML {
         add_filter( 'dokan_get_current_page_id', [ $this, 'dokan_set_current_page_id' ] );
         add_filter( 'dokan_get_dashboard_nav', [ $this, 'replace_dokan_dashboard_nav_key' ] );
         add_action( 'wp_head', [ $this, 'dokan_wpml_remove_fix_fallback_links' ] );
+
+        add_action( 'dokan_store_page_query_filter', [ $this, 'load_store_page_language_switcher_filter' ], 10, 2 );
     }
 
     /**
@@ -200,7 +202,7 @@ class Dokan_WPML {
     public function replace_dokan_dashboard_nav_key( $urls ) {
         $current_lang = apply_filters( 'wpml_current_language', NULL );
         $new_urls     = $urls;
-        
+
         foreach ( $urls as $get_key => $item ) {
             $new_key       = apply_filters( 'wpml_translate_single_string', $get_key, $this->wp_endpoints, $get_key, $current_lang );
             if ( $get_key != $new_key ) {
@@ -423,6 +425,23 @@ class Dokan_WPML {
         }
 
         dokan_remove_hook_for_anonymous_class( 'the_content', 'WPML_Fix_Links_In_Display_As_Translated_Content', 'fix_fallback_links', 99 );
+    }
+
+	/**
+	 * @param \WP_query $query
+	 * @param array     $store_info
+	 */
+    public function load_store_page_language_switcher_filter( $query, $store_info ) {
+		// This needs to be improved, I am probably missing a smarter way to get the current store URL.
+		// Perhaps the current store URL could be included in the $store_info (2nd argument).
+		$custom_store_url = dokan_get_option( 'custom_store_url', 'dokan_general', 'store' );
+		$store_slug = $query->get( $custom_store_url );
+		$store_user = get_user_by( 'slug', $store_slug );
+		$store_url = dokan_get_store_url( $store_user->ID );
+
+		add_filter( 'wpml_ls_language_url', function( $url, $data ) use ( $store_url ) {
+		    return apply_filters( 'wpml_permalink', $store_url, $data['code'] );
+		}, 10, 2 );
     }
 
 } // Dokan_WPML
