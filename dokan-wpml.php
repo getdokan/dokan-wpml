@@ -76,7 +76,7 @@ class Dokan_WPML {
         add_filter( 'dokan_forced_load_scripts', [ $this, 'load_scripts_and_style' ] );
         add_filter( 'dokan_force_load_extra_args', [ $this, 'load_scripts_and_style' ] );
         add_filter( 'dokan_seller_setup_wizard_url', [ $this, 'render_wmpl_home_url' ], 70 );
-        add_filter( 'dokan_get_page_url', [ $this, 'reflect_page_url' ], 10, 3 );
+        add_filter( 'dokan_get_page_url', [ $this, 'reflect_page_url' ], 10, 4 );
         add_filter( 'dokan_get_terms_condition_url', [ $this, 'get_terms_condition_url' ], 10, 2 );
         add_filter( 'dokan_redirect_login', [ $this, 'redirect_if_not_login' ], 90 );
         add_filter( 'dokan_force_page_redirect', [ $this, 'force_redirect_page' ], 90, 2 );
@@ -228,16 +228,23 @@ class Dokan_WPML {
      *
      * @since 1.0.1
      *
-     * @return void
+     * @return string
      */
-    public function reflect_page_url( $url, $page_id, $context ) {
+    public function reflect_page_url( $url, $page_id, $context, $subpage ) {
         if ( ! function_exists( 'wpml_object_id_filter' ) ) {
             return $url;
         }
 
         $page_id = wpml_object_id_filter( $page_id , 'page', true, ICL_LANGUAGE_CODE );
 
-        return get_permalink( $page_id );
+        $url = get_permalink( $page_id );
+
+        if ( $subpage ) {
+	        $subpage = $this->translate_endpoint( $subpage );
+	        $url     = function_exists( 'dokan_add_subpage_to_url' ) ? dokan_add_subpage_to_url( $url, $subpage ) : $url;
+        }
+
+        return $url;
     }
 
     /**
