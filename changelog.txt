@@ -1,3 +1,7 @@
+v1.0.4 -> May 5, 2020
+---------------------------
+ - [new] Load store page language switcher filter support
+
 v1.0.3 -> December 03, 2020
 ---------------------------
  - [fix] Vendor dashboard page all links coming 404 error fixed

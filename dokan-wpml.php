@@ -1,17 +1,17 @@
 <?php
-/*
-Plugin Name: Dokan - WPML Integration
-Plugin URI: https://wedevs.com/
-Description: WPML and Dokan compitable package
-Version: 1.0.3
-Author: weDevs
-Author URI: https://wedevs.com/
-Text Domain: dokan-wpml
-WC requires at least: 3.0
-WC tested up to: 4.7.1
-Domain Path: /languages/
-License: GPL2
-*/
+/**
+ * Plugin Name: Dokan - WPML Integration
+ * Plugin URI: https://wedevs.com/
+ * Description: WPML and Dokan compitable package
+ * Version: 1.0.4
+ * Author: weDevs
+ * Author URI: https://wedevs.com/
+ * Text Domain: dokan-wpml
+ * WC requires at least: 3.0
+ * WC tested up to: 5.2.2
+ * Domain Path: /languages/
+ * License: GPL2
+ */
 
 /**
  * Copyright (c) YEAR weDevs (email: info@wedevs.com). All rights reserved.
@@ -414,6 +414,8 @@ class Dokan_WPML {
      * Remove callback links with WPML on vendor dashboard
      *
      * @since 1.0.3
+     *
+     * @return void
      */
     public function dokan_wpml_remove_fix_fallback_links() {
         if ( function_exists( 'dokan_is_seller_dashboard' ) && ! dokan_is_seller_dashboard() ) {
@@ -428,16 +430,22 @@ class Dokan_WPML {
     }
 
 	/**
+     * Load store page language switcher filter
+     *
+     * @since 1.0.4
+     *
 	 * @param \WP_query $query
 	 * @param array     $store_info
+     *
+     * @return void
 	 */
     public function load_store_page_language_switcher_filter( $query, $store_info ) {
 		// This needs to be improved, I am probably missing a smarter way to get the current store URL.
 		// Perhaps the current store URL could be included in the $store_info (2nd argument).
 		$custom_store_url = dokan_get_option( 'custom_store_url', 'dokan_general', 'store' );
-		$store_slug = $query->get( $custom_store_url );
-		$store_user = get_user_by( 'slug', $store_slug );
-		$store_url = dokan_get_store_url( $store_user->ID );
+		$store_slug       = $query->get( $custom_store_url );
+		$store_user       = get_user_by( 'slug', $store_slug );
+		$store_url        = dokan_get_store_url( $store_user->ID );
 
 		add_filter( 'wpml_ls_language_url', function( $url, $data ) use ( $store_url ) {
 		    return apply_filters( 'wpml_permalink', $store_url, $data['code'] );

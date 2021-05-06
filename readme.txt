@@ -3,11 +3,11 @@ Contributors: wedevs, sabbir1991, rafsuntaskin, alamgircsebd
 Tags: WPML, i18n, l10n, Translation, Dokan
 Donate link: https://tareq.co/donate
 Requires at least: 4.7
-Tested up to: 5.5.3
+Tested up to: 5.7.1
 WC requires at least: 3.0
-WC tested up to: 4.7.1
+WC tested up to: 5.2.2
 Requires PHP: 5.6
-Stable tag: 1.0.3
+Stable tag: 1.0.4
 License: GPL v2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -51,6 +51,10 @@ Ans: Yes, you can contact the WPML team. They offer translation service via thir
 nothing here
 
 == Changelog ==
+
+v1.0.4 -> May 5, 2020
+---------------------------
+ - [new] Load store page language switcher filter support
 
 v1.0.3 -> December 03, 2020
 ---------------------------
