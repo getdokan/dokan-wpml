@@ -76,7 +76,7 @@ class Dokan_WPML {
         add_filter( 'dokan_forced_load_scripts', [ $this, 'load_scripts_and_style' ] );
         add_filter( 'dokan_force_load_extra_args', [ $this, 'load_scripts_and_style' ] );
         add_filter( 'dokan_seller_setup_wizard_url', [ $this, 'render_wmpl_home_url' ], 70 );
-        add_filter( 'dokan_get_page_url', [ $this, 'reflect_page_url' ], 10, 3 );
+        add_filter( 'dokan_get_page_url', [ $this, 'reflect_page_url' ], 10, 4 );
         add_filter( 'dokan_get_terms_condition_url', [ $this, 'get_terms_condition_url' ], 10, 2 );
         add_filter( 'dokan_redirect_login', [ $this, 'redirect_if_not_login' ], 90 );
         add_filter( 'dokan_force_page_redirect', [ $this, 'force_redirect_page' ], 90, 2 );
@@ -89,6 +89,7 @@ class Dokan_WPML {
         add_action( 'wp_head', [ $this, 'dokan_wpml_remove_fix_fallback_links' ] );
 
         add_action( 'dokan_store_page_query_filter', [ $this, 'load_store_page_language_switcher_filter' ], 10, 2 );
+        add_filter( 'dokan_dashboard_nav_settings_key', [ $this, 'filter_dashboard_settings_key' ] );
     }
 
     /**
@@ -181,7 +182,7 @@ class Dokan_WPML {
                 }
             }
 
-            $url = $this->get_dokan_url_for_language( ICL_LANGUAGE_CODE ).$name.'/';
+            $url = $this->get_dokan_url_for_language( ICL_LANGUAGE_CODE,  $name.'/' );
 
         } else {
             $url = $this->get_dokan_url_for_language( ICL_LANGUAGE_CODE );
@@ -200,11 +201,10 @@ class Dokan_WPML {
      * @return array $urls
      */
     public function replace_dokan_dashboard_nav_key( $urls ) {
-        $current_lang = apply_filters( 'wpml_current_language', NULL );
-        $new_urls     = $urls;
+        $new_urls = $urls;
 
         foreach ( $urls as $get_key => $item ) {
-            $new_key       = apply_filters( 'wpml_translate_single_string', $get_key, $this->wp_endpoints, $get_key, $current_lang );
+            $new_key = $this->translate_endpoint( $get_key );
             if ( $get_key != $new_key ) {
                 $new_urls[$new_key] = $new_urls[$get_key];
                 unset($new_urls[$get_key]);
@@ -214,21 +214,37 @@ class Dokan_WPML {
         return $new_urls;
     }
 
+	/**
+	 * @param string $endpoint
+	 *
+	 * @return string
+	 */
+    private function translate_endpoint( $endpoint ) {
+    	return apply_filters( 'wpml_translate_single_string', $endpoint, $this->wp_endpoints, $endpoint );
+    }
+
     /**
      * Reflect page url
      *
      * @since 1.0.1
      *
-     * @return void
+     * @return string
      */
-    public function reflect_page_url( $url, $page_id, $context ) {
+    public function reflect_page_url( $url, $page_id, $context, $subpage ) {
         if ( ! function_exists( 'wpml_object_id_filter' ) ) {
             return $url;
         }
 
         $page_id = wpml_object_id_filter( $page_id , 'page', true, ICL_LANGUAGE_CODE );
 
-        return get_permalink( $page_id );
+        $url = get_permalink( $page_id );
+
+        if ( $subpage ) {
+	        $subpage = $this->translate_endpoint( $subpage );
+	        $url     = function_exists( 'dokan_add_subpage_to_url' ) ? dokan_add_subpage_to_url( $url, $subpage ) : $url;
+        }
+
+        return $url;
     }
 
     /**
@@ -293,10 +309,11 @@ class Dokan_WPML {
      * @since 1.0.0
      *
      * @param  string $language
+     * @param  string $name
      *
      * @return string [$url]
      */
-    public function get_dokan_url_for_language( $language ) {
+    public function get_dokan_url_for_language( $language, $name = '' ) {
         $post_id      = $this->get_raw_option( 'dashboard', 'dokan_pages' );
         $lang_post_id = '';
 
@@ -304,12 +321,16 @@ class Dokan_WPML {
             $lang_post_id = wpml_object_id_filter( $post_id , 'page', true, $language );
         }
 
-        $url = "";
-
         if ( $lang_post_id != 0 ) {
             $url = get_permalink( $lang_post_id );
         } else {
             $url = apply_filters( 'wpml_home_url', get_option( 'home' ) );
+        }
+
+        if ( $name ) {
+	        $urlParts         = wp_parse_url( $url );
+	        $urlParts['path'] = $urlParts['path'] . $name;
+	        $url              = http_build_url( '', $urlParts );
         }
 
         return $url;
@@ -449,7 +470,16 @@ class Dokan_WPML {
 
 		add_filter( 'wpml_ls_language_url', function( $url, $data ) use ( $store_url ) {
 		    return apply_filters( 'wpml_permalink', $store_url, $data['code'] );
-		}, 10, 2 );
+	    }, 10, 2 );
+    }
+
+    /**
+	 * @param string $settings_key
+	 *
+	 * @return string
+	 */
+    public function filter_dashboard_settings_key( $settings_key ) {
+    	return $this->translate_endpoint( $settings_key );
     }
 
 } // Dokan_WPML
