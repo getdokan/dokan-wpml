@@ -72,6 +72,9 @@ class Dokan_WPML {
         // Localize our plugin
         add_action( 'init', [ $this, 'localization_setup' ] );
 
+        // Load classes
+        add_action( 'dokan_loaded', [ $this, 'init_plugin' ] );
+
         // Load all actions hook
         add_filter( 'dokan_forced_load_scripts', [ $this, 'load_scripts_and_style' ] );
         add_filter( 'dokan_force_load_extra_args', [ $this, 'load_scripts_and_style' ] );
@@ -106,6 +109,40 @@ class Dokan_WPML {
         }
 
         return $instance;
+    }
+
+    /**
+     * Initialize products count class
+     *
+     * @since 1.0.5
+     *
+     * @return void
+     */
+    public function init_plugin() {
+        $this->includes();
+        $this->init_classes();
+    }
+
+    /**
+     * Include all the required files
+     *
+     * @since 1.0.5
+     *
+     * @return void
+     */
+    public function includes() {
+        require __DIR__ . '/Dokan_Wpml_Products_Count.php';
+    }
+
+    /**
+     * Init all the classes
+     *
+     *  @since 1.0.5
+     *
+     * @return void
+     */
+    public function init_classes() {
+        new Dokan_Wpml_Products_Count();
     }
 
     /**
