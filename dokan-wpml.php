@@ -114,7 +114,7 @@ class Dokan_WPML {
     /**
      * Initialize products count class
      *
-     * @since 1.0.5
+     * @since 1.0.7
      *
      * @return void
      */
@@ -126,7 +126,7 @@ class Dokan_WPML {
     /**
      * Include all the required files
      *
-     * @since 1.0.5
+     * @since 1.0.7
      *
      * @return void
      */
@@ -137,7 +137,7 @@ class Dokan_WPML {
     /**
      * Init all the classes
      *
-     *  @since 1.0.5
+     *  @since 1.0.7
      *
      * @return void
      */

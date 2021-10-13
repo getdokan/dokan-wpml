@@ -2,7 +2,7 @@
 /**
  * Products Count class
  *
- * @since 1.0.5
+ * @since 1.0.7
  *
  * @class Dokan_Wpml_Products_Count handle products count for each language
  */
@@ -10,15 +10,18 @@ class Dokan_Wpml_Products_Count {
 
     /**
      * Constructor for Dokan_Wpml_Products_Count class
+     *
+     * @since 1.0.7
+     * 
      */
     public function __construct() {
         add_action( 'dokan_after_product_listing_status_filter', [ $this, 'show_products_count' ] );
     }
 
     /**
-     * Language wise product count
+     * Language wise products count
      *
-     * @since 1.0.5
+     * @since 1.0.7
      *
      * @return void
      */
