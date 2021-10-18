@@ -44,7 +44,7 @@ class Dokan_Wpml_Products_Count {
         if ( false === $counts ) {
             $counts = $wpdb->get_results(
                 $wpdb->prepare(
-                    "SELECT language_code, COUNT(posts.ID) AS count FROM wp_icl_translations translations
+                    "SELECT language_code, COUNT(posts.ID) AS count FROM {$wpdb->prefix}icl_translations translations
                             INNER JOIN wp_posts posts ON translations.element_id=posts.ID AND translations.element_type = CONCAT('post_', posts.post_type)
                             INNER JOIN {$wpdb->term_relationships} AS term_relationships ON posts.ID = term_relationships.object_id
                             INNER JOIN {$wpdb->term_taxonomy} AS term_taxonomy ON term_relationships.term_taxonomy_id = term_taxonomy.term_taxonomy_id
