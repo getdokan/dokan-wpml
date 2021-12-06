@@ -1,4 +1,7 @@
 <?php
+
+use WeDevs\Dokan\Cache;
+
 /**
  * Plugin Name: Dokan - WPML Integration
  * Plugin URI: https://wedevs.com/
@@ -496,18 +499,17 @@ class Dokan_WPML {
         global $wpdb;
 
         $user_id                    = dokan_get_current_user_id();
-        $exclude_product_types      = esc_sql( array( 'booking' ) );
-        $exclude_product_types_text = "'" . implode( "', '", $exclude_product_types ) . "'";
-        $cache_group                = 'dokan_cache_seller_product_data_' . $user_id;
-        $cache_key                  = 'dokan-products-count-' . $user_id;
-        $counts                     = wp_cache_get( $cache_key, $cache_group );
-        $tracked_cache_keys         = get_option( $cache_group, [] );
+        $cache_key                  = "dokan_products_count_$user_id";
+        $languages                  = wpml_get_active_languages();
+        $language_codes             = "'" . implode( "', '", array_keys( $languages ) ) . "'";
+        $exclude_product_types_text = "'" . implode( "', '", esc_sql( array( 'booking' ) ) ) . "'";
 
-        if ( ! in_array( $cache_key, $tracked_cache_keys, true ) ) {
-            $tracked_cache_keys[] = $cache_key;
-            update_option( $cache_group, $tracked_cache_keys );
+        if ( class_exists( 'WeDevs\Dokan\Cache' ) ) {
+            $counts = Cache::get( $cache_key );
+        } else {
+            $counts = false;
         }
-
+        
         if ( false === $counts ) {
             $counts = $wpdb->get_results(
                 $wpdb->prepare(
@@ -523,18 +525,19 @@ class Dokan_WPML {
                             AND posts.post_author = %d
                             AND post_status <> 'trash'
                             AND post_status <> 'auto-draft'
-                            AND translations.language_code IN ('bn','en','all')
+                            AND translations.language_code IN ({$language_codes})
                                 GROUP BY language_code",
-                    $user_id
+                    $user_id,
                 ),
                 ARRAY_A
             );
 
-            wp_cache_set( $cache_key, $counts, $cache_group, 3600 * 6 );
+            if ( class_exists( 'WeDevs\Dokan\Cache' ) ) {
+                Cache::set( $cache_key, $counts );
+            }
         }
 
         $html      = '';
-        $languages = wpml_get_active_languages();
 
         foreach ( $counts as $count ) {
             $html .= '<li>
