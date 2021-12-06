@@ -241,8 +241,10 @@ class Dokan_WPML {
         $url = get_permalink( $page_id );
 
         if ( $subpage ) {
-	        $subpage = $this->translate_endpoint( $subpage );
-	        $url     = function_exists( 'dokan_add_subpage_to_url' ) ? dokan_add_subpage_to_url( $url, $subpage ) : $url;
+            $subpages    = explode( '/', $subpage );
+            $subpages[0] = $this->translate_endpoint( $subpages[0] );
+            $subpage     = implode( '/', $subpages );
+            $url         = function_exists( 'dokan_add_subpage_to_url' ) ? dokan_add_subpage_to_url( $url, $subpage ) : $url;
         }
 
         return $url;
