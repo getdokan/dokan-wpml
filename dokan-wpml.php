@@ -72,9 +72,6 @@ class Dokan_WPML {
         // Localize our plugin
         add_action( 'init', [ $this, 'localization_setup' ] );
 
-        // Load classes
-        add_action( 'dokan_loaded', [ $this, 'init_plugin' ] );
-
         // Load all actions hook
         add_filter( 'dokan_forced_load_scripts', [ $this, 'load_scripts_and_style' ] );
         add_filter( 'dokan_force_load_extra_args', [ $this, 'load_scripts_and_style' ] );
@@ -93,6 +90,7 @@ class Dokan_WPML {
 
         add_action( 'dokan_store_page_query_filter', [ $this, 'load_store_page_language_switcher_filter' ], 10, 2 );
         add_filter( 'dokan_dashboard_nav_settings_key', [ $this, 'filter_dashboard_settings_key' ] );
+        add_action( 'dokan_after_product_listing_status_filter', [ $this, 'show_products_count' ] );
     }
 
     /**
@@ -109,40 +107,6 @@ class Dokan_WPML {
         }
 
         return $instance;
-    }
-
-    /**
-     * Initialize products count class
-     *
-     * @since 1.0.7
-     *
-     * @return void
-     */
-    public function init_plugin() {
-        $this->includes();
-        $this->init_classes();
-    }
-
-    /**
-     * Include all the required files
-     *
-     * @since 1.0.7
-     *
-     * @return void
-     */
-    public function includes() {
-        require __DIR__ . '/Dokan_Wpml_Products_Count.php';
-    }
-
-    /**
-     * Init all the classes
-     *
-     *  @since 1.0.7
-     *
-     * @return void
-     */
-    public function init_classes() {
-        new Dokan_Wpml_Products_Count();
     }
 
     /**
@@ -517,6 +481,66 @@ class Dokan_WPML {
 	 */
     public function filter_dashboard_settings_key( $settings_key ) {
     	return $this->translate_endpoint( $settings_key );
+    }
+
+    /**
+     * Language wise products count
+     *
+     * @since 1.0.7
+     *
+     * @return void
+     */
+    public function show_products_count() {
+        global $wpdb;
+
+        $user_id                    = dokan_get_current_user_id();
+        $exclude_product_types      = esc_sql( array( 'booking' ) );
+        $exclude_product_types_text = "'" . implode( "', '", $exclude_product_types ) . "'";
+        $cache_group                = 'dokan_cache_seller_product_data_' . $user_id;
+        $cache_key                  = 'dokan-products-count-' . $user_id;
+        $counts                     = wp_cache_get( $cache_key, $cache_group );
+        $tracked_cache_keys         = get_option( $cache_group, [] );
+
+        if ( ! in_array( $cache_key, $tracked_cache_keys, true ) ) {
+            $tracked_cache_keys[] = $cache_key;
+            update_option( $cache_group, $tracked_cache_keys );
+        }
+
+        if ( false === $counts ) {
+            $counts = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT language_code, COUNT(posts.ID) AS count FROM {$wpdb->prefix}icl_translations translations
+                            INNER JOIN wp_posts posts ON translations.element_id=posts.ID AND translations.element_type = CONCAT('post_', posts.post_type)
+                            INNER JOIN {$wpdb->term_relationships} AS term_relationships ON posts.ID = term_relationships.object_id
+                            INNER JOIN {$wpdb->term_taxonomy} AS term_taxonomy ON term_relationships.term_taxonomy_id = term_taxonomy.term_taxonomy_id
+                            INNER JOIN {$wpdb->terms} AS terms ON term_taxonomy.term_id = terms.term_id
+                            WHERE
+                                term_taxonomy.taxonomy = 'product_type'
+                            AND terms.slug NOT IN ({$exclude_product_types_text})
+                            AND posts.post_type = 'product'
+                            AND posts.post_author = %d
+                            AND post_status <> 'trash'
+                            AND post_status <> 'auto-draft'
+                            AND translations.language_code IN ('bn','en','all')
+                                GROUP BY language_code",
+                    $user_id
+                ),
+                ARRAY_A
+            );
+
+            wp_cache_set( $cache_key, $counts, $cache_group, 3600 * 6 );
+        }
+
+        $html      = '';
+        $languages = wpml_get_active_languages();
+
+        foreach ( $counts as $count ) {
+            $html .= '<li>
+                <a href="#">' . esc_html( $languages[ $count['language_code'] ]['display_name'] ) . ' (' . esc_html( $count['count'] ) . ')' . '</a>
+            </li>';
+        }
+
+        echo $html;
     }
 
 } // Dokan_WPML
