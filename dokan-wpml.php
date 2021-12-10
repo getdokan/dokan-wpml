@@ -498,14 +498,15 @@ class Dokan_WPML {
     public function show_products_count() {
         global $wpdb;
 
-        $user_id                    = dokan_get_current_user_id();
-        $cache_key                  = "dokan_products_count_$user_id";
+        $seller_id                  = dokan_get_current_user_id();
+        $cache_key                  = "dokan_products_count_$seller_id";
+        $cache_group                = "seller_product_data_{$seller_id}";
         $languages                  = wpml_get_active_languages();
         $language_codes             = "'" . implode( "', '", array_keys( $languages ) ) . "'";
         $exclude_product_types_text = "'" . implode( "', '", esc_sql( array( 'booking' ) ) ) . "'";
 
         if ( class_exists( 'WeDevs\Dokan\Cache' ) ) {
-            $counts = Cache::get( $cache_key );
+            $counts = Cache::get( $cache_key, $cache_group );
         } else {
             $counts = false;
         }
@@ -533,7 +534,7 @@ class Dokan_WPML {
             );
 
             if ( class_exists( 'WeDevs\Dokan\Cache' ) ) {
-                Cache::set( $cache_key, $counts );
+                Cache::set( $cache_key, $counts, $cache_group );
             }
         }
 
