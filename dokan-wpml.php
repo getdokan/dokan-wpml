@@ -528,7 +528,7 @@ class Dokan_WPML {
                             AND post_status <> 'auto-draft'
                             AND translations.language_code IN ({$language_codes})
                                 GROUP BY language_code",
-                    $user_id,
+                    $seller_id,
                 ),
                 ARRAY_A
             );
