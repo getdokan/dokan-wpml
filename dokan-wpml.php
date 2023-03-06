@@ -498,9 +498,18 @@ class Dokan_WPML {
     	return $this->translate_endpoint( $settings_key );
     }
 
+	/**
+	 * Add necessary query variables.
+	 *
+	 * @since 1.0.7
+	 *
+	 * @param array $query_vars Query variables.
+	 *
+	 * @return array
+	 */
 	public function add_query_vars_for_plain_permalink( $query_vars ) {
 		// Check is it plain permalink.
-		if ( ! empty( get_option( 'permalink_structure' ) ) ) {
+		if ( ! empty( get_option( 'permalink_structure' ) ) || ! class_exists( 'WPML_Endpoints_Support' ) ) {
 			return $query_vars;
 		}
 
