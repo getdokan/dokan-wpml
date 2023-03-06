@@ -85,12 +85,13 @@ class Dokan_WPML {
         add_filter( 'dokan_get_navigation_url', [ $this, 'load_translated_url' ], 10 ,2 );
         add_filter( 'body_class', [ $this, 'add_dashboard_template_class_if_wpml' ], 99 );
         add_filter( 'dokan_get_current_page_id', [ $this, 'dokan_set_current_page_id' ] );
-        add_filter( 'dokan_get_dashboard_nav', [ $this, 'replace_dokan_dashboard_nav_key' ] );
+        //add_filter( 'dokan_get_dashboard_nav', [ $this, 'replace_dokan_dashboard_nav_key' ] );
         add_action( 'wp_head', [ $this, 'dokan_wpml_remove_fix_fallback_links' ] );
 
         add_action( 'dokan_store_page_query_filter', [ $this, 'load_store_page_language_switcher_filter' ], 10, 2 );
         add_filter( 'dokan_dashboard_nav_settings_key', [ $this, 'filter_dashboard_settings_key' ] );
 		add_filter( 'request', [ $this, 'add_query_vars_for_plain_permalink' ] );
+		add_filter( 'dokan_dashboard_nav_active', [ $this, 'set_active_nav_links_for_plain_permalink' ], 10, 3 );
     }
 
     /**
@@ -508,24 +509,48 @@ class Dokan_WPML {
 	 * @return array
 	 */
 	public function add_query_vars_for_plain_permalink( $query_vars ) {
-		// Check is it plain permalink.
-		if ( ! empty( get_option( 'permalink_structure' ) ) || ! class_exists( 'WPML_Endpoints_Support' ) ) {
-			return $query_vars;
-		}
-
-		// as plain permalink do not parse rewrite rules, we need to set the query vars manually if we get any match with translated endpoints.
-		$registered_endpoints = get_option( WPML_Endpoints_Support::REGISTERED_ENDPOINTS_OPTION_KEY, array() );
-		$translated_endpoints = array_map( function( $endpoint ) {
-			return $this->translate_endpoint( $endpoint );
-		}, $registered_endpoints );
-
-		foreach ( $translated_endpoints as $endpoint => $translated_endpoint ) {
+		foreach ( $this->get_translated_endpoints() as $endpoint => $translated_endpoint ) {
 			if ( isset( $_GET[ $translated_endpoint ] ) ) {
 				$query_vars[ $endpoint ] = sanitize_text_field( wp_unslash( $_GET[ $translated_endpoint ] ) );
 			}
 		}
 
 		return $query_vars;
+	}
+
+	/**
+	 * @param string $active_menu Active menu Key.
+	 * @param string $request Request string.
+	 * @param array $active active url destructured (Maybe).
+	 *
+	 * @return string
+	 */
+	public function set_active_nav_links_for_plain_permalink( $active_menu, $request, $active ) {
+		foreach ( $this->get_translated_endpoints() as $endpoint => $translated_endpoint ) {
+			if ( isset( $_GET[ $translated_endpoint ] ) ) {
+				return  $endpoint;
+			}
+		}
+		return $active_menu;
+	}
+
+	/**
+	 * Get translated endpoints for plain permalink.
+	 *
+	 * @return array
+	 */
+	private function get_translated_endpoints() {
+		// Check is it plain permalink.
+		if ( ! empty( get_option( 'permalink_structure' ) ) || ! class_exists( 'WPML_Endpoints_Support' ) ) {
+			return array();
+		}
+
+		// as plain permalink do not parse rewrite rules, we need to set the query vars manually if we get any match with translated endpoints.
+		$registered_endpoints = get_option( WPML_Endpoints_Support::REGISTERED_ENDPOINTS_OPTION_KEY, array() );
+
+		return array_map( function( $endpoint ) {
+			return $this->translate_endpoint( $endpoint );
+		}, $registered_endpoints );
 	}
 
 } // Dokan_WPML
