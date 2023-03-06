@@ -90,6 +90,7 @@ class Dokan_WPML {
 
         add_action( 'dokan_store_page_query_filter', [ $this, 'load_store_page_language_switcher_filter' ], 10, 2 );
         add_filter( 'dokan_dashboard_nav_settings_key', [ $this, 'filter_dashboard_settings_key' ] );
+		add_filter( 'request', [ $this, 'add_query_vars_for_plain_permalink' ] );
     }
 
     /**
@@ -330,9 +331,22 @@ class Dokan_WPML {
         }
 
         if ( $name ) {
-	        $urlParts         = wp_parse_url( $url );
-	        $urlParts['path'] = $urlParts['path'] . $name;
-	        $url              = http_build_url( '', $urlParts );
+	        $is_plain_permalink = empty( get_option( 'permalink_structure' ) );
+	        $url_parts          = wp_parse_url( $url );
+
+	        if ( $is_plain_permalink ) {
+		        $subpage = rtrim( $name, '/' );
+		        $subpage_part = explode( '/', $subpage );
+		        if ( 2 === count( $subpage_part ) ) {
+			        $url_parts['query'] .= '&' . "{$subpage_part[0]}={$subpage_part[1]}";
+		        } else {
+			        $url_parts['query'] .= '&' . "{$subpage_part[0]}";
+		        }
+	        } else {
+		        $url_parts['path'] = $url_parts['path'] . $name;
+	        }
+
+	        $url = http_build_url( '', $url_parts );
         }
 
         return $url;
@@ -483,6 +497,27 @@ class Dokan_WPML {
     public function filter_dashboard_settings_key( $settings_key ) {
     	return $this->translate_endpoint( $settings_key );
     }
+
+	public function add_query_vars_for_plain_permalink( $query_vars ) {
+		// Check is it plain permalink.
+		if ( ! empty( get_option( 'permalink_structure' ) ) ) {
+			return $query_vars;
+		}
+
+		// as plain permalink do not parse rewrite rules, we need to set the query vars manually if we get any match with translated endpoints.
+		$registered_endpoints = get_option( WPML_Endpoints_Support::REGISTERED_ENDPOINTS_OPTION_KEY, array() );
+		$translated_endpoints = array_map( function( $endpoint ) {
+			return $this->translate_endpoint( $endpoint );
+		}, $registered_endpoints );
+
+		foreach ( $translated_endpoints as $endpoint => $translated_endpoint ) {
+			if ( isset( $_GET[ $translated_endpoint ] ) ) {
+				$query_vars[ $endpoint ] = sanitize_text_field( wp_unslash( $_GET[ $translated_endpoint ] ) );
+			}
+		}
+
+		return $query_vars;
+	}
 
 } // Dokan_WPML
 
