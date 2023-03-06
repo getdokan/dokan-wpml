@@ -519,6 +519,8 @@ class Dokan_WPML {
 	}
 
 	/**
+	 * Set Active nav link.
+	 *
 	 * @param string $active_menu Active menu Key.
 	 * @param string $request Request string.
 	 * @param array $active active url destructured (Maybe).
