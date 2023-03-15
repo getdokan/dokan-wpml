@@ -92,6 +92,8 @@ class Dokan_WPML {
         add_filter( 'dokan_dashboard_nav_settings_key', [ $this, 'filter_dashboard_settings_key' ] );
 		add_filter( 'request', [ $this, 'add_query_vars_for_plain_permalink' ] );
 		add_filter( 'dokan_dashboard_nav_active', [ $this, 'set_active_nav_links_for_plain_permalink' ], 10, 3 );
+		add_filter( 'dokan_dashboard_product_page_endpoint', [ $this, 'translate_page_query_arg' ] );
+		add_filter( 'dokan_dashboard_orders_page_endpoints', [ $this, 'translate_page_query_arg' ] );
     }
 
     /**
@@ -555,6 +557,16 @@ class Dokan_WPML {
 		}, $registered_endpoints );
 	}
 
+	/**
+	 * Translate page endpoint for plain permalink support
+	 *
+	 * @param string $endpoint Endpoint.
+	 *
+	 * @return string
+	 */
+	public function translate_page_query_arg( $endpoint ) {
+		return $this->translate_endpoint( $endpoint );
+	}
 } // Dokan_WPML
 
 function dokan_load_wpml() {
