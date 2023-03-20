@@ -94,6 +94,7 @@ class Dokan_WPML {
 		add_filter( 'dokan_dashboard_nav_active', [ $this, 'set_active_nav_links_for_plain_permalink' ], 10, 3 );
 		add_filter( 'dokan_dashboard_product_page_endpoint', [ $this, 'translate_page_query_arg' ] );
 		add_filter( 'dokan_dashboard_orders_page_endpoints', [ $this, 'translate_page_query_arg' ] );
+		add_filter( 'dokan_dashboard_spmv_page_endpoints', [ $this, 'translate_page_query_arg' ] );
     }
 
     /**
