@@ -95,6 +95,9 @@ class Dokan_WPML {
 		add_filter( 'dokan_dashboard_product_page_endpoint', [ $this, 'translate_page_query_arg' ] );
 		add_filter( 'dokan_dashboard_orders_page_endpoints', [ $this, 'translate_page_query_arg' ] );
 		add_filter( 'dokan_dashboard_spmv_page_endpoints', [ $this, 'translate_page_query_arg' ] );
+		add_filter( 'dokan_dashboard_report_page_endpoints', [ $this, 'translate_page_query_arg' ] );
+		add_filter( 'dokan_dashboard_delivery_time_dashboard_page_endpoints', [ $this, 'translate_page_query_arg' ] );
+		add_filter( 'dokan_dashboard_store_support_page_endpoints', [ $this, 'translate_page_query_arg' ] );
     }
 
     /**
