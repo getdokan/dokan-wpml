@@ -484,6 +484,37 @@ class Dokan_WPML {
     	return $this->translate_endpoint( $settings_key );
     }
 
+	/**
+	 * Remove URL translation.
+	 *
+	 * @return void
+	 */
+	public static function remove_url_translation() {
+		if ( class_exists( 'WPML_URL_Filters' ) ) {
+			dokan_remove_hook_for_anonymous_class( 'home_url', WPML_URL_Filters::class, 'home_url_filter', -10 );
+		}
+
+		if ( function_exists( 'wpml_get_home_url_filter' ) ) {
+			remove_filter( 'wpml_home_url', 'wpml_get_home_url_filter', 10 );
+		}
+
+		dokan_remove_hook_for_anonymous_class( 'dokan_get_navigation_url', 'Dokan_WPML', 'load_translated_url', 10 );
+	}
+
+	public static function restore_url_translation() {
+		global $wpml_url_filters;
+
+		if ( class_exists( 'WPML_URL_Filters' ) ) {
+			add_filter( 'home_url', [ $wpml_url_filters, 'home_url_filter' ], -10, 4 );
+		}
+
+		if ( function_exists( 'wpml_get_home_url_filter' ) ) {
+			add_filter( 'wpml_home_url', 'wpml_get_home_url_filter', 10 );
+		}
+
+		add_filter( 'dokan_get_navigation_url', [ new Dokan_WPML, 'load_translated_url' ], 10, 2 ); // phpcs:ignore PSR12.Classes.ClassInstantiation.MissingParentheses
+	}
+
 } // Dokan_WPML
 
 function dokan_load_wpml() {
