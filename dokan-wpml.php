@@ -485,7 +485,9 @@ class Dokan_WPML {
     }
 
 	/**
-	 * Remove URL translation.
+	 * Remove home URL translation.
+	 *
+	 * @since 1.0.7
 	 *
 	 * @return void
 	 */
@@ -501,6 +503,13 @@ class Dokan_WPML {
 		dokan_remove_hook_for_anonymous_class( 'dokan_get_navigation_url', 'Dokan_WPML', 'load_translated_url', 10 );
 	}
 
+	/**
+	 * Restore home URL translation.
+	 *
+	 * @since 1.0.7
+	 *
+	 * @return void
+	 */
 	public static function restore_url_translation() {
 		global $wpml_url_filters;
 
@@ -514,7 +523,6 @@ class Dokan_WPML {
 
 		add_filter( 'dokan_get_navigation_url', [ new Dokan_WPML, 'load_translated_url' ], 10, 2 ); // phpcs:ignore PSR12.Classes.ClassInstantiation.MissingParentheses
 	}
-
 } // Dokan_WPML
 
 function dokan_load_wpml() {
