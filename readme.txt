@@ -2,12 +2,12 @@
 Contributors: wedevs, sabbir1991, rafsuntaskin, alamgircsebd
 Tags: WPML, i18n, l10n, Translation, Dokan
 Donate link: https://tareq.co/donate
-Requires at least: 4.7
-Tested up to: 5.7.1
-WC requires at least: 3.0
-WC tested up to: 5.2.2
-Requires PHP: 5.6
-Stable tag: 1.0.4
+Requires at least: 5.4.0
+Tested up to: 6.2.2
+WC requires at least: 5.5.0
+WC tested up to: 7.7.0
+Requires PHP: 7.2
+Stable tag: 1.0.7
 License: GPL v2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -51,6 +51,23 @@ Ans: Yes, you can contact the WPML team. They offer translation service via thir
 nothing here
 
 == Changelog ==
+
+v1.0.7 -> May 29, 2023
+---------------------------
+- [update] Updated compatibility with WordPress 6.2.2
+- [update] Updated compatibility with WooCommerce 7.7.0
+- [update] Updated compatibility with Dokan 3.7.19
+- [new] Added two new methods (remove_url_translation and restore_url_translation) to reset home url translation
+- [fix] Fixed endpoints with second argument wasn't working for translated languages, eg: mysite.com/support-tickets/10
+
+v1.0.6 -> October 7, 2021
+---------------------------
+- [new] Add vendor capability for WooCommerce WPML configuration
+
+v1.0.5 -> October 4, 2021
+---------------------------
+- [new] Re-build the URL with the translated endpoint
+- [new] Filter the dashboard settings key to properly display the settings
 
 v1.0.4 -> May 5, 2020
 ---------------------------
