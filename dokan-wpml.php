@@ -72,6 +72,9 @@ class Dokan_WPML {
         // Localize our plugin
         add_action( 'init', [ $this, 'localization_setup' ] );
 
+		// load appsero tracker
+	    $this->appsero_init_tracker();
+
         // Load all actions hook
         add_filter( 'dokan_forced_load_scripts', [ $this, 'load_scripts_and_style' ] );
         add_filter( 'dokan_force_load_extra_args', [ $this, 'load_scripts_and_style' ] );
@@ -108,7 +111,22 @@ class Dokan_WPML {
         return $instance;
     }
 
-    /**
+	/**
+	 * Initialize the plugin tracker
+	 *
+	 * @since 1.0.7
+	 *
+	 * @return void
+	 */
+	public function appsero_init_tracker() {
+		$client = new \Appsero\Client( 'f7973783-e0d0-4d56-bbba-229e5581b0cd', 'Dokan - WPML Integration', __FILE__ );
+
+		$this->insights = $client->insights();
+
+		$this->insights->init_plugin();
+	}
+
+	/**
      * Print error notice if dependency not active
      *
      * @since 1.0.1
@@ -131,7 +149,7 @@ class Dokan_WPML {
         }
     }
 
-    /**
+	/**
      * Initialize plugin for localization
      *
      * @uses load_plugin_textdomain()
