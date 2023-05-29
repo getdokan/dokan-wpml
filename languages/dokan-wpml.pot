@@ -1,25 +1,25 @@
-# Copyright (C) 2021 weDevs
+# Copyright (C) 2023 weDevs
 # This file is distributed under the GPL2.
 msgid ""
 msgstr ""
-"Project-Id-Version: Dokan - WPML Integration 1.0.4\n"
+"Project-Id-Version: Dokan - WPML Integration 1.0.7\n"
 "Report-Msgid-Bugs-To: http://wedevs.com/support/\n"
-"POT-Creation-Date: 2021-05-06 17:52:09+00:00\n"
+"POT-Creation-Date: 2023-05-29 04:31:12+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"PO-Revision-Date: 2021-MO-DA HO:MI+ZONE\n"
+"PO-Revision-Date: 2023-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
-"X-Generator: grunt-wp-i18n 0.4.9\n"
+"X-Generator: grunt-wp-i18n 1.0.3\n"
 
-#: dokan-wpml.php:121
+#: dokan-wpml.php:141
 msgid ""
 "<b>Dokan - WPML Integration</b> requires %sDokan plugin%s to be installed & "
 "activated!"
 msgstr ""
 
-#: dokan-wpml.php:127
+#: dokan-wpml.php:147
 msgid ""
 "<b>Dokan - WPML Integration</b> requires %sWPML Multilingual CMS%s to be "
 "installed & activated!"
@@ -34,7 +34,7 @@ msgid "https://wedevs.com/"
 msgstr ""
 
 #. Description of the plugin/theme
-msgid "WPML and Dokan compitable package"
+msgid "WPML and Dokan compatible package"
 msgstr ""
 
 #. Author of the plugin/theme
