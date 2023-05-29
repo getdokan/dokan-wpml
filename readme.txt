@@ -52,6 +52,15 @@ nothing here
 
 == Changelog ==
 
+v1.0.6 -> October 7, 2021
+---------------------------
+- [new] Add vendor capability for WooCommerce WPML configuration
+
+v1.0.5 -> October 4, 2021
+---------------------------
+- [new] Re-build the URL with the translated endpoint
+- [new] Filter the dashboard settings key to properly display the settings
+
 v1.0.4 -> May 5, 2020
 ---------------------------
  - [new] Load store page language switcher filter support

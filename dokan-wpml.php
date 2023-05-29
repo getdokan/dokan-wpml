@@ -93,6 +93,7 @@ class Dokan_WPML {
 
         add_action( 'dokan_store_page_query_filter', [ $this, 'load_store_page_language_switcher_filter' ], 10, 2 );
         add_filter( 'dokan_dashboard_nav_settings_key', [ $this, 'filter_dashboard_settings_key' ] );
+	    add_filter( 'wcml_vendor_addon_configuration', [ $this, 'add_vendor_capability' ] );
     }
 
     /**
@@ -501,6 +502,19 @@ class Dokan_WPML {
     public function filter_dashboard_settings_key( $settings_key ) {
     	return $this->translate_endpoint( $settings_key );
     }
+
+	/**
+	 * Add vendor capability for WooCommerce WPML
+	 *
+	 * @since 1.0.6
+	 *
+	 * @return array
+	 */
+	public function add_vendor_capability() {
+		return [
+			'vendor_capability' => 'seller',
+		];
+	}
 
 	/**
 	 * Remove home URL translation.
