@@ -2,13 +2,13 @@
 /**
  * Plugin Name: Dokan - WPML Integration
  * Plugin URI: https://wedevs.com/
- * Description: WPML and Dokan compitable package
- * Version: 1.0.4
+ * Description: WPML and Dokan compatible package
+ * Version: 1.0.7
  * Author: weDevs
  * Author URI: https://wedevs.com/
  * Text Domain: dokan-wpml
- * WC requires at least: 3.0
- * WC tested up to: 5.2.2
+ * WC requires at least: 5.5.0
+ * WC tested up to: 7.7.0
  * Domain Path: /languages/
  * License: GPL2
  */
@@ -72,28 +72,8 @@ class Dokan_WPML {
         // Localize our plugin
         add_action( 'init', [ $this, 'localization_setup' ] );
 
-		// load appsero tracker
-	    $this->appsero_init_tracker();
-
-        // Load all actions hook
-        add_filter( 'dokan_forced_load_scripts', [ $this, 'load_scripts_and_style' ] );
-        add_filter( 'dokan_force_load_extra_args', [ $this, 'load_scripts_and_style' ] );
-        add_filter( 'dokan_seller_setup_wizard_url', [ $this, 'render_wmpl_home_url' ], 70 );
-        add_filter( 'dokan_get_page_url', [ $this, 'reflect_page_url' ], 10, 4 );
-        add_filter( 'dokan_get_terms_condition_url', [ $this, 'get_terms_condition_url' ], 10, 2 );
-        add_filter( 'dokan_redirect_login', [ $this, 'redirect_if_not_login' ], 90 );
-        add_filter( 'dokan_force_page_redirect', [ $this, 'force_redirect_page' ], 90, 2 );
-
-        // Load all filters hook
-        add_filter( 'dokan_get_navigation_url', [ $this, 'load_translated_url' ], 10 ,2 );
-        add_filter( 'body_class', [ $this, 'add_dashboard_template_class_if_wpml' ], 99 );
-        add_filter( 'dokan_get_current_page_id', [ $this, 'dokan_set_current_page_id' ] );
-        add_filter( 'dokan_get_dashboard_nav', [ $this, 'replace_dokan_dashboard_nav_key' ] );
-        add_action( 'wp_head', [ $this, 'dokan_wpml_remove_fix_fallback_links' ] );
-
-        add_action( 'dokan_store_page_query_filter', [ $this, 'load_store_page_language_switcher_filter' ], 10, 2 );
-        add_filter( 'dokan_dashboard_nav_settings_key', [ $this, 'filter_dashboard_settings_key' ] );
-	    add_filter( 'wcml_vendor_addon_configuration', [ $this, 'add_vendor_capability' ] );
+		// load all actions and filter under plugins loaded hooks
+	    add_action( 'plugins_loaded', [ $this, 'plugins_loaded' ] );
     }
 
     /**
@@ -111,6 +91,42 @@ class Dokan_WPML {
 
         return $instance;
     }
+
+	/**
+	 * Execute on plugis loaded hooks
+	 *
+	 * @since 1.0.7 moved from constructor to plugins_loaded hook
+	 *
+	 * @return void
+	 */
+	public function plugins_loaded() {
+		if ( true !== $this->check_dependency() ) {
+			return;
+		}
+
+		// load appsero tracker
+		$this->appsero_init_tracker();
+
+		// Load all actions hook
+		add_filter( 'dokan_forced_load_scripts', [ $this, 'load_scripts_and_style' ] );
+		add_filter( 'dokan_force_load_extra_args', [ $this, 'load_scripts_and_style' ] );
+		add_filter( 'dokan_seller_setup_wizard_url', [ $this, 'render_wmpl_home_url' ], 70 );
+		add_filter( 'dokan_get_page_url', [ $this, 'reflect_page_url' ], 10, 4 );
+		add_filter( 'dokan_get_terms_condition_url', [ $this, 'get_terms_condition_url' ], 10, 2 );
+		add_filter( 'dokan_redirect_login', [ $this, 'redirect_if_not_login' ], 90 );
+		add_filter( 'dokan_force_page_redirect', [ $this, 'force_redirect_page' ], 90, 2 );
+
+		// Load all filters hook
+		add_filter( 'dokan_get_navigation_url', [ $this, 'load_translated_url' ], 10 ,2 );
+		add_filter( 'body_class', [ $this, 'add_dashboard_template_class_if_wpml' ], 99 );
+		add_filter( 'dokan_get_current_page_id', [ $this, 'dokan_set_current_page_id' ] );
+		add_filter( 'dokan_get_dashboard_nav', [ $this, 'replace_dokan_dashboard_nav_key' ] );
+		add_action( 'wp_head', [ $this, 'dokan_wpml_remove_fix_fallback_links' ] );
+
+		add_action( 'dokan_store_page_query_filter', [ $this, 'load_store_page_language_switcher_filter' ], 10, 2 );
+		add_filter( 'dokan_dashboard_nav_settings_key', [ $this, 'filter_dashboard_settings_key' ] );
+		add_filter( 'wcml_vendor_addon_configuration', [ $this, 'add_vendor_capability' ] );
+	}
 
 	/**
 	 * Initialize the plugin tracker
@@ -137,18 +153,33 @@ class Dokan_WPML {
     public function dependency_missing_notice() {
         deactivate_plugins( plugin_basename( __FILE__ ) );
 
-        if ( ! class_exists( 'WeDevs_Dokan' ) ) {
-            $error   = sprintf( __( '<b>Dokan - WPML Integration</b> requires %sDokan plugin%s to be installed & activated!' , 'dokan-wpml' ), '<a target="_blank" href="https://wedevs.com/products/plugins/dokan/">', '</a>' );
-            $message = '<div class="error"><p>' . $error . '</p></div>';
-            wp_die( $message );
-        }
-
-        if ( ! class_exists( 'SitePress' ) ) {
-            $error   = sprintf( __( '<b>Dokan - WPML Integration</b> requires %sWPML Multilingual CMS%s to be installed & activated!' , 'dokan-wpml' ), '<a target="_blank" href="https://wpml.org/">', '</a>' );
-            $message = '<div class="error"><p>' . $error . '</p></div>';
+		$missing_dependency = $this->check_dependency();
+        if ( is_wp_error( $missing_dependency ) ) {
+            $message = '<div class="error"><p>' . $missing_dependency->get_error_message() . '</p></div>';
             wp_die( $message );
         }
     }
+
+	/**
+	 * Check if dependency is active
+	 *
+	 * @since 1.0.7
+	 *
+	 * @return WP_Error|bool
+	 */
+	public function check_dependency() {
+		if ( ! class_exists( 'WeDevs_Dokan' ) ) {
+			$error   = sprintf( __( '<b>Dokan - WPML Integration</b> requires %sDokan plugin%s to be installed & activated!' , 'dokan-wpml' ), '<a target="_blank" href="https://wedevs.com/products/plugins/dokan/">', '</a>' );
+			return new WP_Error( 'doakn_wpml_dependency_missing', $error );
+		}
+
+		if ( ! class_exists( 'SitePress' ) ) {
+			$error   = sprintf( __( '<b>Dokan - WPML Integration</b> requires %sWPML Multilingual CMS%s to be installed & activated!' , 'dokan-wpml' ), '<a target="_blank" href="https://wpml.org/">', '</a>' );
+			return new WP_Error( 'doakn_wpml_dependency_missing', $error );
+		}
+
+		return true;
+	}
 
 	/**
      * Initialize plugin for localization
@@ -553,12 +584,13 @@ class Dokan_WPML {
 			add_filter( 'wpml_home_url', 'wpml_get_home_url_filter', 10 );
 		}
 
-		add_filter( 'dokan_get_navigation_url', [ new Dokan_WPML, 'load_translated_url' ], 10, 2 ); // phpcs:ignore PSR12.Classes.ClassInstantiation.MissingParentheses
+
+		add_filter( 'dokan_get_navigation_url', [ self::init(), 'load_translated_url' ], 10, 2 );
 	}
 } // Dokan_WPML
 
 function dokan_load_wpml() {
-    $dokan_wpml = Dokan_WPML::init();
+    return Dokan_WPML::init();
 }
 
 dokan_load_wpml();
