@@ -126,6 +126,8 @@ class Dokan_WPML {
 		add_action( 'dokan_store_page_query_filter', [ $this, 'load_store_page_language_switcher_filter' ], 10, 2 );
 		add_filter( 'dokan_dashboard_nav_settings_key', [ $this, 'filter_dashboard_settings_key' ] );
 		add_filter( 'wcml_vendor_addon_configuration', [ $this, 'add_vendor_capability' ] );
+
+		add_action( 'init', [ $this, 'load_wpml_admin_post_actions' ], 10 );
 	}
 
 	/**
@@ -587,6 +589,28 @@ class Dokan_WPML {
 
 		add_filter( 'dokan_get_navigation_url', [ self::init(), 'load_translated_url' ], 10, 2 );
 	}
+
+
+	/**
+	 * Load wpml post actions on frontend
+	 *
+	 * @since 1.0.8
+	 *
+	 * @return void
+	 */
+	public function load_wpml_admin_post_actions() {
+		if ( is_admin() ) {
+			return;
+		}
+
+		global $wpdb, $sitepress;
+
+		if ( class_exists( 'WPML_Admin_Post_Actions' ) && method_exists( $sitepress, 'get_settings' ) ) {
+			$wpml_post_translations = new WPML_Admin_Post_Actions( $sitepress->get_settings(), $wpdb );
+			$wpml_post_translations->init();
+		}
+	}
+
 } // Dokan_WPML
 
 function dokan_load_wpml() {
