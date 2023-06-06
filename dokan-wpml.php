@@ -563,15 +563,23 @@ class Dokan_WPML {
 	 * @return void
 	 */
 	public static function remove_url_translation() {
+		global $wpml_url_filters;
+
 		if ( class_exists( 'WPML_URL_Filters' ) ) {
-			dokan_remove_hook_for_anonymous_class( 'home_url', WPML_URL_Filters::class, 'home_url_filter', -10 );
+			remove_filter( 'home_url', [ $wpml_url_filters, 'home_url_filter' ], -10 );
+			if ( $wpml_url_filters->frontend_uses_root() === true ) {
+				remove_filter( 'page_link', array( $wpml_url_filters, 'page_link_filter_root' ), 1 );
+			} else {
+				remove_filter( 'page_link', array( $wpml_url_filters, 'page_link_filter' ), 1 );
+			}
 		}
 
 		if ( function_exists( 'wpml_get_home_url_filter' ) ) {
 			remove_filter( 'wpml_home_url', 'wpml_get_home_url_filter', 10 );
 		}
 
-		dokan_remove_hook_for_anonymous_class( 'dokan_get_navigation_url', 'Dokan_WPML', 'load_translated_url', 10 );
+		remove_filter( 'dokan_get_page_url', [ self::init(), 'reflect_page_url' ], 10 );
+		remove_filter( 'dokan_get_navigation_url', [ self::init(), 'load_translated_url'], 10 );
 	}
 
 	/**
@@ -586,12 +594,18 @@ class Dokan_WPML {
 
 		if ( class_exists( 'WPML_URL_Filters' ) ) {
 			add_filter( 'home_url', [ $wpml_url_filters, 'home_url_filter' ], -10, 4 );
+			if ( $wpml_url_filters->frontend_uses_root() === true ) {
+				add_filter( 'page_link', array( $wpml_url_filters, 'page_link_filter_root' ), 1, 2 );
+			} else {
+				add_filter( 'page_link', array( $wpml_url_filters, 'page_link_filter' ), 1, 2 );
+			}
 		}
 
 		if ( function_exists( 'wpml_get_home_url_filter' ) ) {
 			add_filter( 'wpml_home_url', 'wpml_get_home_url_filter', 10 );
 		}
 
+		add_filter( 'dokan_get_page_url', [ self::init(), 'reflect_page_url' ], 10, 4 );
 		add_filter( 'dokan_get_navigation_url', [ self::init(), 'load_translated_url' ], 10, 2 );
 	}
 
