@@ -128,6 +128,8 @@ class Dokan_WPML {
 		add_filter( 'wcml_vendor_addon_configuration', [ $this, 'add_vendor_capability' ] );
 
 		add_action( 'init', [ $this, 'load_wpml_admin_post_actions' ], 10 );
+		add_action( 'dokan_product_change_status_after_save', [ $this, 'change_product_status' ], 10, 2 );
+		add_action( 'dokan_product_status_revert_after_save', [ $this, 'change_product_status' ], 10, 2 );
 	}
 
 	/**
@@ -586,10 +588,8 @@ class Dokan_WPML {
 			add_filter( 'wpml_home_url', 'wpml_get_home_url_filter', 10 );
 		}
 
-
 		add_filter( 'dokan_get_navigation_url', [ self::init(), 'load_translated_url' ], 10, 2 );
 	}
-
 
 	/**
 	 * Load wpml post actions on frontend
@@ -612,6 +612,37 @@ class Dokan_WPML {
 		}
 	}
 
+	/**
+	 * Change product status if base product status is changed.
+	 *
+	 * @since 1.0.8
+	 *
+	 * @param WC_Product $product
+	 * @param string $status
+	 *
+	 * @return void
+	 */
+	public function change_product_status( $product, $status ) {
+		$type         = apply_filters( 'wpml_element_type', get_post_type( $product->get_id() ) );
+		$trid         = apply_filters( 'wpml_element_trid', false, $product->get_id(), $type );
+		$translations = apply_filters( 'wpml_get_element_translations', array(), $trid, $type );
+
+		foreach ( $translations as $lang => $translation ) {
+			if ( $translation->original ) {
+				continue;
+			}
+
+			// get product id
+			$translated_product = wc_get_product( $translation->element_id );
+			if ( ! $translated_product ) {
+				continue;
+			}
+
+			// set product status
+			$translated_product->set_status( $status );
+			$translated_product->save();
+		}
+	}
 } // Dokan_WPML
 
 function dokan_load_wpml() {
