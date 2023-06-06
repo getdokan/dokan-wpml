@@ -606,7 +606,8 @@ class Dokan_WPML {
 		global $wpdb, $sitepress;
 
 		if ( class_exists( 'WPML_Admin_Post_Actions' ) && method_exists( $sitepress, 'get_settings' ) ) {
-			$wpml_post_translations = new WPML_Admin_Post_Actions( $sitepress->get_settings(), $wpdb );
+			$settings = $sitepress->get_settings();
+			$wpml_post_translations = new WPML_Admin_Post_Actions( $settings, $wpdb );
 			$wpml_post_translations->init();
 		}
 	}
