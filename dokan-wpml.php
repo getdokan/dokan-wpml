@@ -117,7 +117,7 @@ class Dokan_WPML {
 		add_filter( 'dokan_force_page_redirect', [ $this, 'force_redirect_page' ], 90, 2 );
 
 		// Load all filters hook
-		add_filter( 'dokan_get_navigation_url', [ $this, 'load_translated_url' ], 10 ,2 );
+		add_filter( 'dokan_get_navigation_url', [ $this, 'load_translated_url' ], 10, 2 );
 		add_filter( 'body_class', [ $this, 'add_dashboard_template_class_if_wpml' ], 99 );
 		add_filter( 'dokan_get_current_page_id', [ $this, 'dokan_set_current_page_id' ] );
 		add_filter( 'dokan_get_dashboard_nav', [ $this, 'replace_dokan_dashboard_nav_key' ] );
@@ -126,6 +126,11 @@ class Dokan_WPML {
 		add_action( 'dokan_store_page_query_filter', [ $this, 'load_store_page_language_switcher_filter' ], 10, 2 );
 		add_filter( 'dokan_dashboard_nav_settings_key', [ $this, 'filter_dashboard_settings_key' ] );
 		add_filter( 'wcml_vendor_addon_configuration', [ $this, 'add_vendor_capability' ] );
+
+		add_action( 'init', [ $this, 'fix_store_category_query_arg' ], 10 );
+		add_action( 'init', [ $this, 'load_wpml_admin_post_actions' ], 10 );
+		add_action( 'dokan_product_change_status_after_save', [ $this, 'change_product_status' ], 10, 2 );
+		add_action( 'dokan_product_status_revert_after_save', [ $this, 'change_product_status' ], 10, 2 );
 	}
 
 	/**
@@ -169,12 +174,14 @@ class Dokan_WPML {
 	 */
 	public function check_dependency() {
 		if ( ! class_exists( 'WeDevs_Dokan' ) ) {
-			$error   = sprintf( __( '<b>Dokan - WPML Integration</b> requires %sDokan plugin%s to be installed & activated!' , 'dokan-wpml' ), '<a target="_blank" href="https://wedevs.com/products/plugins/dokan/">', '</a>' );
+            // translators: %1$s: opening anchor tag, %2$s: closing anchor tag
+			$error = sprintf( __( '<b>Dokan - WPML Integration</b> requires %1$s Dokan plugin %2$s to be installed & activated!', 'dokan-wpml' ), '<a target="_blank" href="https://wedevs.com/products/plugins/dokan/">', '</a>' );
 			return new WP_Error( 'doakn_wpml_dependency_missing', $error );
 		}
 
 		if ( ! class_exists( 'SitePress' ) ) {
-			$error   = sprintf( __( '<b>Dokan - WPML Integration</b> requires %sWPML Multilingual CMS%s to be installed & activated!' , 'dokan-wpml' ), '<a target="_blank" href="https://wpml.org/">', '</a>' );
+            // translators: %1$s: opening anchor tag, %2$s: closing anchor tag
+			$error = sprintf( __( '<b>Dokan - WPML Integration</b> requires %1$s WPML Multilingual CMS %2$s to be installed & activated!', 'dokan-wpml' ), '<a target="_blank" href="https://wpml.org/">', '</a>' );
 			return new WP_Error( 'doakn_wpml_dependency_missing', $error );
 		}
 
@@ -195,7 +202,7 @@ class Dokan_WPML {
      *
      * @since 1.0.0
      *
-     * @return void
+     * @return string
      */
     public function render_wmpl_home_url( $url ) {
         $translated_url = apply_filters( 'wpml_home_url', $url );
@@ -212,27 +219,26 @@ class Dokan_WPML {
      *
      * @return string
      */
-    function load_translated_url( $url, $name ) {
-        $current_lang = apply_filters( 'wpml_current_language', NULL );
+    public function load_translated_url( $url, $name ) {
+        $current_lang = apply_filters( 'wpml_current_language', null );
 
         if ( ! function_exists( 'wpml_object_id_filter' ) ) {
             return $url;
         }
 
         if ( ! empty( $name ) ) {
-
             if ( $current_lang ) {
                 $name_arr = explode( '/', $name );
 
                 if ( isset( $name_arr[1] ) ) {
-                    $name = apply_filters( 'wpml_translate_single_string', $name_arr[0], $this->wp_endpoints, $name_arr[0], $current_lang ).'/'.$name_arr[1];
+                    $name = apply_filters( 'wpml_translate_single_string', $name_arr[0], $this->wp_endpoints, $name_arr[0], $current_lang ) . '/' . $name_arr[1];
                 } else {
                     $get_name = ( ! empty( $name_arr[0] ) ) ? $name_arr[0] : $name;
                     $name     = apply_filters( 'wpml_translate_single_string', $get_name, $this->wp_endpoints, $get_name, $current_lang );
                 }
             }
 
-            $url = $this->get_dokan_url_for_language( ICL_LANGUAGE_CODE,  $name.'/' );
+            $url = $this->get_dokan_url_for_language( ICL_LANGUAGE_CODE, $name . '/' );
 
         } else {
             $url = $this->get_dokan_url_for_language( ICL_LANGUAGE_CODE );
@@ -255,9 +261,9 @@ class Dokan_WPML {
 
         foreach ( $urls as $get_key => $item ) {
             $new_key = $this->translate_endpoint( $get_key );
-            if ( $get_key != $new_key ) {
-                $new_urls[$new_key] = $new_urls[$get_key];
-                unset($new_urls[$get_key]);
+            if ( $get_key !== $new_key ) {
+                $new_urls[ $new_key ] = $new_urls[ $get_key ];
+                unset( $new_urls[ $get_key ] );
             }
         }
 
@@ -285,7 +291,7 @@ class Dokan_WPML {
             return $url;
         }
 
-        $page_id = wpml_object_id_filter( $page_id , 'page', true, ICL_LANGUAGE_CODE );
+        $page_id = wpml_object_id_filter( $page_id, 'page', true, ICL_LANGUAGE_CODE );
 
         $url = get_permalink( $page_id );
 
@@ -304,14 +310,14 @@ class Dokan_WPML {
      *
      * @since 1.0.1
      *
-     * @return url
+     * @return string
      */
     public function get_terms_condition_url( $url, $page_id ) {
         if ( ! function_exists( 'wpml_object_id_filter' ) ) {
             return $url;
         }
 
-        $page_id = wpml_object_id_filter( $page_id , 'page', true, ICL_LANGUAGE_CODE );
+        $page_id = wpml_object_id_filter( $page_id, 'page', true, ICL_LANGUAGE_CODE );
 
         return get_permalink( $page_id );
     }
@@ -321,7 +327,7 @@ class Dokan_WPML {
      *
      * @since 1.0.1
      *
-     * @return void
+     * @return string
      */
     public function redirect_if_not_login( $url ) {
         if ( ! function_exists( 'wpml_object_id_filter' ) ) {
@@ -329,7 +335,7 @@ class Dokan_WPML {
         }
 
         $page_id      = wc_get_page_id( 'myaccount' );
-        $lang_post_id = wpml_object_id_filter( $page_id , 'page', true, ICL_LANGUAGE_CODE );
+        $lang_post_id = wpml_object_id_filter( $page_id, 'page', true, ICL_LANGUAGE_CODE );
 
         return get_permalink( $lang_post_id );
     }
@@ -339,14 +345,14 @@ class Dokan_WPML {
      *
      * @since 1.0.1
      *
-     * @return void
+     * @return bool
      */
     public function force_redirect_page( $flag, $page_id ) {
         if ( ! function_exists( 'wpml_object_id_filter' ) ) {
             return false;
         }
 
-        $lang_post_id = wpml_object_id_filter( $page_id , 'page', true, ICL_LANGUAGE_CODE );
+        $lang_post_id = wpml_object_id_filter( $page_id, 'page', true, ICL_LANGUAGE_CODE );
 
         if ( is_page( $lang_post_id ) ) {
             return true;
@@ -370,10 +376,10 @@ class Dokan_WPML {
         $lang_post_id = '';
 
         if ( function_exists( 'wpml_object_id_filter' ) ) {
-            $lang_post_id = wpml_object_id_filter( $post_id , 'page', true, $language );
+            $lang_post_id = wpml_object_id_filter( $post_id, 'page', true, $language );
         }
 
-        if ( $lang_post_id != 0 ) {
+        if ( (int) $lang_post_id !== 0 ) {
             $url = get_permalink( $lang_post_id );
         } else {
             $url = apply_filters( 'wpml_home_url', get_option( 'home' ) );
@@ -421,7 +427,7 @@ class Dokan_WPML {
      *
      * @since 1.0.0
      *
-     * @return void
+     * @return bool
      */
     public function load_scripts_and_style() {
         if ( ! function_exists( 'wpml_object_id_filter' ) ) {
@@ -434,12 +440,14 @@ class Dokan_WPML {
             return false;
         }
 
-        $page_id         = $this->get_raw_option( 'dashboard', 'dokan_pages' );
-        $current_page_id = wpml_object_id_filter( $post->ID, 'page', true, wpml_get_default_language() );
+        $page_id         = (int) $this->get_raw_option( 'dashboard', 'dokan_pages' );
+        $current_page_id = (int) wpml_object_id_filter( $post->ID, 'page', true, wpml_get_default_language() );
 
-        if ( ( $current_page_id == $page_id ) || ( get_query_var( 'edit' ) && is_singular( 'product' ) ) ) {
+        if ( ( $current_page_id === $page_id ) || ( get_query_var( 'edit' ) && is_singular( 'product' ) ) ) {
             return true;
         }
+
+        return false;
     }
 
     /**
@@ -466,9 +474,9 @@ class Dokan_WPML {
      *
      * @param  string $option
      * @param  string $section
-     * @param  mix $default
+     * @param  mixed $default
      *
-     * @return mix
+     * @return mixed
      */
     public function get_raw_option( $option, $section, $default = '' ) {
         if ( ! class_exists( 'WPML_Multilingual_Options_Utils' ) ) {
@@ -600,9 +608,116 @@ class Dokan_WPML {
 		add_filter( 'dokan_get_page_url', [ self::init(), 'reflect_page_url' ], 10, 4 );
 		add_filter( 'dokan_get_navigation_url', [ self::init(), 'load_translated_url' ], 10, 2 );
 	}
+
+    /**
+     * Add tax_query arg in WP_User_Query used in dokan()->vendor->get_vendors()
+     *
+     * @since 1.0.8
+     *
+     * @param string[] $args
+     *
+     * @return void
+     */
+    public function fix_store_category_query_arg() {
+        // return if dokan pro is not active or store category object is not available
+        if (
+            ! function_exists( 'dokan_is_store_categories_feature_on' ) ||
+            ! dokan_is_store_categories_feature_on() ||
+            ! dokan_pro()->store_category ) {
+            return;
+        }
+
+        // remove existing pre_user_query action
+        remove_action( 'pre_user_query', [ dokan_pro()->store_category, 'add_store_category_query' ] );
+
+        // translated store category slug was unicode encoded, so we needed to decode it to get the correct slug
+        add_filter(
+            'dokan_get_store_categories', function ( $store_categories ) {
+                foreach ( $store_categories as &$category ) {
+                    $slug             = urldecode( $category['slug'] ); // decode the percent encoding
+                    $slug             = str_replace( '\\', '\\\\', $slug ); // escape the backslashes
+                    $category['slug'] = json_decode( '"' . $slug . '"' ); // parse as JSON
+                }
+
+                return $store_categories;
+            }
+        );
+
+        // add pre_user_query action with WPML filter
+        add_action(
+            'pre_user_query', function ( $wp_user_query ) {
+                if ( ! empty( $wp_user_query->query_vars['store_category_query'] ) ) {
+                    global $sitepress, $wpdb;
+
+                    $current_language = wpml_get_current_language();
+                    $sitepress->switch_lang( $sitepress->get_default_language() );
+                    $store_category_query = new WP_Tax_Query( $wp_user_query->query_vars['store_category_query'] );
+                    $clauses              = $store_category_query->get_sql( $wpdb->users, 'ID' );
+
+                    $wp_user_query->query_fields = 'DISTINCT ' . $wp_user_query->query_fields;
+                    $wp_user_query->query_from   .= $clauses['join'];
+                    $wp_user_query->query_where  .= $clauses['where'];
+                    $sitepress->switch_lang( $current_language );
+                }
+            }
+        );
+    }
+
+	/**
+	 * Load wpml post actions on frontend
+	 *
+	 * @since 1.0.8
+	 *
+	 * @return void
+	 */
+	public function load_wpml_admin_post_actions() {
+		if ( is_admin() ) {
+			return;
+		}
+
+		global $wpdb, $sitepress;
+
+		if ( class_exists( 'WPML_Admin_Post_Actions' ) && method_exists( $sitepress, 'get_settings' ) ) {
+			$settings = $sitepress->get_settings();
+			$wpml_post_translations = new WPML_Admin_Post_Actions( $settings, $wpdb );
+			$wpml_post_translations->init();
+		}
+	}
+
+	/**
+	 * Change product status if base product status is changed.
+	 *
+	 * @since 1.0.8
+	 *
+	 * @param WC_Product $product
+	 * @param string $status
+	 *
+	 * @return void
+	 */
+	public function change_product_status( $product, $status ) {
+		$type         = apply_filters( 'wpml_element_type', get_post_type( $product->get_id() ) );
+		$trid         = apply_filters( 'wpml_element_trid', false, $product->get_id(), $type );
+		$translations = apply_filters( 'wpml_get_element_translations', array(), $trid, $type );
+
+		foreach ( $translations as $lang => $translation ) {
+			if ( $translation->original ) {
+				continue;
+			}
+
+			// get product id
+			$translated_product = wc_get_product( $translation->element_id );
+			if ( ! $translated_product ) {
+				continue;
+			}
+
+			// set product status
+			$translated_product->set_status( $status );
+			$translated_product->save();
+		}
+	}
 } // Dokan_WPML
 
-function dokan_load_wpml() {
+function dokan_load_wpml() { // phpcs:ignore
     return Dokan_WPML::init();
 }
 
