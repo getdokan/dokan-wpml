@@ -1,3 +1,27 @@
+v1.0.8 -> Jun 08, 2023
+---------------------------
+- **fix:** When the admin disables vendors using one language the vendor product still shows on the shop page after switching to another language.
+- **fix:** Store category filter does not work for the secondary language.
+- **fix:** The secondary language products are not being deleted after deleting a product from the primary language.
+- **fix:** Fixed a issue when we are using dokan_get_navigation_url() function to get any dashboard link, it gives translated page URL instead of the default language dashboard page URL.
+
+v1.0.7 -> May 29, 2023
+---------------------------
+- [update] Updated compatibility with WordPress 6.2.2
+- [update] Updated compatibility with WooCommerce 7.7.0
+- [update] Updated compatibility with Dokan 3.7.19
+- [new] Added two new methods (remove_url_translation and restore_url_translation) to reset home url translation
+- [fix] Fixed endpoints with second argument wasn't working for translated languages, eg: mysite.com/support-tickets/10
+
+v1.0.6 -> October 7, 2021
+---------------------------
+- [new] Add vendor capability for WooCommerce WPML configuration
+
+v1.0.5 -> October 4, 2021
+---------------------------
+- [new] Re-build the URL with the translated endpoint
+- [new] Filter the dashboard settings key to properly display the settings
+
 v1.0.4 -> May 5, 2020
 ---------------------------
  - [new] Load store page language switcher filter support
