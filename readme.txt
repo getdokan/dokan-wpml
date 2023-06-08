@@ -1,13 +1,13 @@
 === Dokan WPML ===
-Contributors: wedevs, sabbir1991, rafsuntaskin, alamgircsebd
+Contributors: wedevs
 Tags: WPML, i18n, l10n, Translation, Dokan
 Donate link: https://tareq.co/donate
 Requires at least: 5.4.0
 Tested up to: 6.2.2
 WC requires at least: 5.5.0
-WC tested up to: 7.7.0
+WC tested up to: 7.7.2
 Requires PHP: 7.2
-Stable tag: 1.0.7
+Stable tag: 1.0.8
 License: GPL v2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -51,6 +51,13 @@ Ans: Yes, you can contact the WPML team. They offer translation service via thir
 nothing here
 
 == Changelog ==
+
+v1.0.8 -> Jun 08, 2023
+---------------------------
+- **fix:** When the admin disables vendors using one language the vendor product still shows on the shop page after switching to another language.
+- **fix:** Store category filter does not work for the secondary language.
+- **fix:** The secondary language products are not being deleted after deleting a product from the primary language.
+- **fix:** Fixed a issue when we are using dokan_get_navigation_url() function to get any dashboard link, it gives translated page URL instead of the default language dashboard page URL.
 
 v1.0.7 -> May 29, 2023
 ---------------------------
