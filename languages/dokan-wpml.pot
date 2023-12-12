@@ -2,9 +2,9 @@
 # This file is distributed under the GPL2.
 msgid ""
 msgstr ""
-"Project-Id-Version: Dokan - WPML Integration 1.0.8\n"
+"Project-Id-Version: Dokan - WPML Integration 1.0.9\n"
 "Report-Msgid-Bugs-To: http://wedevs.com/support/\n"
-"POT-Creation-Date: 2023-06-08 07:19:39+00:00\n"
+"POT-Creation-Date: 2023-12-12 05:23:23+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -13,14 +13,14 @@ msgstr ""
 "Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
 "X-Generator: grunt-wp-i18n 1.0.3\n"
 
-#: dokan-wpml.php:178
+#: dokan-wpml.php:179
 #. translators: %1$s: opening anchor tag, %2$s: closing anchor tag
 msgid ""
 "<b>Dokan - WPML Integration</b> requires %1$s Dokan plugin %2$s to be "
 "installed & activated!"
 msgstr ""
 
-#: dokan-wpml.php:184
+#: dokan-wpml.php:185
 #. translators: %1$s: opening anchor tag, %2$s: closing anchor tag
 msgid ""
 "<b>Dokan - WPML Integration</b> requires %1$s WPML Multilingual CMS %2$s to "
