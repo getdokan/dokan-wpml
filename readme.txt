@@ -3,11 +3,11 @@ Contributors: wedevs
 Tags: WPML, i18n, l10n, Translation, Dokan
 Donate link: https://tareq.co/donate
 Requires at least: 5.4.0
-Tested up to: 6.2.2
+Tested up to: 6.4.2
 WC requires at least: 5.5.0
-WC tested up to: 7.7.2
+WC tested up to: 8.2.2
 Requires PHP: 7.2
-Stable tag: 1.0.8
+Stable tag: 1.0.9
 License: GPL v2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -51,6 +51,12 @@ Ans: Yes, you can contact the WPML team. They offer translation service via thir
 nothing here
 
 == Changelog ==
+
+v1.0.9 -> Dec 12, 2023
+---------------------------
+- **new:** added a new filter named `dokan_get_translated_page_id` support added. With it, we will be able to get translated Page id from any Page ID.
+- **update:** WordPress Version 6.4.2 compatibility added.
+- **update:** WooCommerce Version 8.2.2 compatibility added.
 
 v1.0.8 -> Jun 08, 2023
 ---------------------------
