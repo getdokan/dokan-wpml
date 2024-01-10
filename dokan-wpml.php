@@ -121,11 +121,13 @@ class Dokan_WPML {
 		add_filter( 'body_class', [ $this, 'add_dashboard_template_class_if_wpml' ], 99 );
 		add_filter( 'dokan_get_current_page_id', [ $this, 'dokan_set_current_page_id' ] );
 		add_filter( 'dokan_get_translated_page_id', [ $this, 'dokan_get_translated_page_id' ] );
-		add_filter( 'dokan_get_dashboard_nav', [ $this, 'replace_dokan_dashboard_nav_key' ] );
+//		add_filter( 'dokan_get_dashboard_nav', [ $this, 'replace_dokan_dashboard_nav_key' ] );
 		add_action( 'wp_head', [ $this, 'dokan_wpml_remove_fix_fallback_links' ] );
 
 		add_action( 'dokan_store_page_query_filter', [ $this, 'load_store_page_language_switcher_filter' ], 10, 2 );
 		add_filter( 'dokan_dashboard_nav_settings_key', [ $this, 'filter_dashboard_settings_key' ] );
+		add_filter( 'dokan_dashboard_nav_menu_key', [ $this, 'filter_dashboard_settings_key' ] );
+		add_filter( 'dokan_dashboard_nav_submenu_key', [ $this, 'filter_dashboard_settings_key' ] );
 		add_filter( 'wcml_vendor_addon_configuration', [ $this, 'add_vendor_capability' ] );
 
 		add_action( 'init', [ $this, 'fix_store_category_query_arg' ], 10 );
