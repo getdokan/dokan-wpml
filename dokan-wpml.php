@@ -740,7 +740,7 @@ class Dokan_WPML {
     /**
      * Add High Performance Order Storage Support
      *
-     * @since 3.8.0
+     * @since 1.0.10
      *
      * @return void
      */
