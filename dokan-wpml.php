@@ -8,7 +8,7 @@
  * Author URI: https://wedevs.com/
  * Text Domain: dokan-wpml
  * WC requires at least: 5.5.0
- * WC tested up to: 8.2.2
+ * WC tested up to: 8.4.0
  * Domain Path: /languages/
  * License: GPL2
  */
@@ -106,6 +106,7 @@ class Dokan_WPML {
 
 		// load appsero tracker
 		$this->appsero_init_tracker();
+        add_action( 'before_woocommerce_init', [ $this, 'declare_woocommerce_feature_compatibility' ] );
 
 		// Load all actions hook
 		add_filter( 'dokan_forced_load_scripts', [ $this, 'load_scripts_and_style' ] );
@@ -735,6 +736,20 @@ class Dokan_WPML {
 			$translated_product->save();
 		}
 	}
+
+    /**
+     * Add High Performance Order Storage Support
+     *
+     * @since 3.8.0
+     *
+     * @return void
+     */
+    public function declare_woocommerce_feature_compatibility() {
+        if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
+            \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true );
+            \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'cart_checkout_blocks', __FILE__, true );
+        }
+    }
 } // Dokan_WPML
 
 function dokan_load_wpml() { // phpcs:ignore
