@@ -122,7 +122,6 @@ class Dokan_WPML {
 		add_filter( 'body_class', [ $this, 'add_dashboard_template_class_if_wpml' ], 99 );
 		add_filter( 'dokan_get_current_page_id', [ $this, 'dokan_set_current_page_id' ] );
 		add_filter( 'dokan_get_translated_page_id', [ $this, 'dokan_get_translated_page_id' ] );
-//		add_filter( 'dokan_get_dashboard_nav', [ $this, 'replace_dokan_dashboard_nav_key' ] );
 		add_action( 'wp_head', [ $this, 'dokan_wpml_remove_fix_fallback_links' ] );
 
 		add_action( 'dokan_store_page_query_filter', [ $this, 'load_store_page_language_switcher_filter' ], 10, 2 );
@@ -249,29 +248,6 @@ class Dokan_WPML {
         }
 
         return $url;
-    }
-
-    /**
-     * Replace dashboard key language wise
-     *
-     * @param array $urls
-     *
-     * @since 2.4
-     *
-     * @return array $urls
-     */
-    public function replace_dokan_dashboard_nav_key( $urls ) {
-        $new_urls = $urls;
-
-        foreach ( $urls as $get_key => $item ) {
-            $new_key = $this->translate_endpoint( $get_key );
-            if ( $get_key !== $new_key ) {
-                $new_urls[ $new_key ] = $new_urls[ $get_key ];
-                unset( $new_urls[ $get_key ] );
-            }
-        }
-
-        return $new_urls;
     }
 
 	/**
