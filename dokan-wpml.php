@@ -53,7 +53,14 @@ class Dokan_WPML {
      *
      * @var string
      */
-    public $wp_endpoints = 'WP Endpoints';
+    public  $wp_endpoints = 'WP Endpoints';
+
+    /*
+     * Appsero client
+     *
+     * @var string
+     */
+    protected $insights;
 
     /**
      * Constructor for the Dokan_WPML class
