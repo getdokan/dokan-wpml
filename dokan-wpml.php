@@ -3,12 +3,12 @@
  * Plugin Name: Dokan - WPML Integration
  * Plugin URI: https://wedevs.com/
  * Description: WPML and Dokan compatible package
- * Version: 1.0.9
+ * Version: 1.0.10
  * Author: weDevs
  * Author URI: https://wedevs.com/
  * Text Domain: dokan-wpml
  * WC requires at least: 5.5.0
- * WC tested up to: 8.2.2
+ * WC tested up to: 8.5.1
  * Domain Path: /languages/
  * License: GPL2
  */
@@ -53,7 +53,14 @@ class Dokan_WPML {
      *
      * @var string
      */
-    public $wp_endpoints = 'WP Endpoints';
+    public  $wp_endpoints = 'WP Endpoints';
+
+    /*
+     * Appsero client
+     *
+     * @var string
+     */
+    protected $insights;
 
     /**
      * Constructor for the Dokan_WPML class
@@ -106,6 +113,7 @@ class Dokan_WPML {
 
 		// load appsero tracker
 		$this->appsero_init_tracker();
+        add_action( 'before_woocommerce_init', [ $this, 'declare_woocommerce_feature_compatibility' ] );
 
 		// Load all actions hook
 		add_filter( 'dokan_forced_load_scripts', [ $this, 'load_scripts_and_style' ] );
@@ -121,11 +129,12 @@ class Dokan_WPML {
 		add_filter( 'body_class', [ $this, 'add_dashboard_template_class_if_wpml' ], 99 );
 		add_filter( 'dokan_get_current_page_id', [ $this, 'dokan_set_current_page_id' ] );
 		add_filter( 'dokan_get_translated_page_id', [ $this, 'dokan_get_translated_page_id' ] );
-		add_filter( 'dokan_get_dashboard_nav', [ $this, 'replace_dokan_dashboard_nav_key' ] );
 		add_action( 'wp_head', [ $this, 'dokan_wpml_remove_fix_fallback_links' ] );
 
 		add_action( 'dokan_store_page_query_filter', [ $this, 'load_store_page_language_switcher_filter' ], 10, 2 );
 		add_filter( 'dokan_dashboard_nav_settings_key', [ $this, 'filter_dashboard_settings_key' ] );
+		add_filter( 'dokan_dashboard_nav_menu_key', [ $this, 'filter_dashboard_settings_key' ] );
+		add_filter( 'dokan_dashboard_nav_submenu_key', [ $this, 'filter_dashboard_settings_key' ] );
 		add_filter( 'wcml_vendor_addon_configuration', [ $this, 'add_vendor_capability' ] );
 
 		add_action( 'init', [ $this, 'fix_store_category_query_arg' ], 10 );
@@ -246,29 +255,6 @@ class Dokan_WPML {
         }
 
         return $url;
-    }
-
-    /**
-     * Replace dashboard key language wise
-     *
-     * @param array $urls
-     *
-     * @since 2.4
-     *
-     * @return array $urls
-     */
-    public function replace_dokan_dashboard_nav_key( $urls ) {
-        $new_urls = $urls;
-
-        foreach ( $urls as $get_key => $item ) {
-            $new_key = $this->translate_endpoint( $get_key );
-            if ( $get_key !== $new_key ) {
-                $new_urls[ $new_key ] = $new_urls[ $get_key ];
-                unset( $new_urls[ $get_key ] );
-            }
-        }
-
-        return $new_urls;
     }
 
 	/**
@@ -733,6 +719,20 @@ class Dokan_WPML {
 			$translated_product->save();
 		}
 	}
+
+    /**
+     * Add High Performance Order Storage Support
+     *
+     * @since 1.0.10
+     *
+     * @return void
+     */
+    public function declare_woocommerce_feature_compatibility() {
+        if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
+            \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true );
+            \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'cart_checkout_blocks', __FILE__, true );
+        }
+    }
 } // Dokan_WPML
 
 function dokan_load_wpml() { // phpcs:ignore
