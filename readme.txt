@@ -2,12 +2,12 @@
 Contributors: wedevs
 Tags: WPML, i18n, l10n, Translation, Dokan
 Donate link: https://tareq.co/donate
-Requires at least: 5.4.0
+Requires at least: 5.6
 Tested up to: 6.4.2
 WC requires at least: 5.5.0
-WC tested up to: 8.4.0
-Requires PHP: 7.2
-Stable tag: 1.0.9
+WC tested up to: 8.5.1
+Requires PHP: 7.4
+Stable tag: 1.0.10
 License: GPL v2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -51,6 +51,12 @@ Ans: Yes, you can contact the WPML team. They offer translation service via thir
 nothing here
 
 == Changelog ==
+
+v1.0.10 -> Jan 23, 2024
+---------------------------
+- **fix:** Translation-Related Issues with Specific Menu Items in Vendor Dashboard with WPML
+- **fix:** Woocommerce error notice when Dokan WPML Integration plugin is active
+- **fix:** PHP warning creation of dynamic property
 
 v1.0.9 -> Dec 12, 2023
 ---------------------------

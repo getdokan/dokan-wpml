@@ -1,3 +1,9 @@
+v1.0.10 -> Jan 23, 2024
+---------------------------
+- **fix:** Translation-Related Issues with Specific Menu Items in Vendor Dashboard with WPML
+- **fix:** Woocommerce error notice when Dokan WPML Integration plugin is active
+- **fix:** PHP warning creation of dynamic property
+
 v1.0.8 -> Jun 08, 2023
 ---------------------------
 - **fix:** When the admin disables vendors using one language the vendor product still shows on the shop page after switching to another language.
