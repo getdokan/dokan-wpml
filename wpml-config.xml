@@ -14,5 +14,7 @@
         <custom-field action="copy">dokan_subscription_enable_trial</custom-field>
         <custom-field action="copy">dokan_subscription_trail_range</custom-field>
         <custom-field action="copy">dokan_subscription_trial_period_types</custom-field>
+        <custom-field action="copy">_dokan_advertisement_slot_count</custom-field>
+        <custom-field action="copy">_dokan_advertisement_validity</custom-field>
     </custom-fields>
 </wpml-config>
