@@ -125,6 +125,9 @@ class Dokan_WPML {
 		add_filter( 'dokan_force_page_redirect', [ $this, 'force_redirect_page' ], 90, 2 );
 
 		// Load all filters hook
+        add_filter('sanitize_user_meta_product_package_id', [ $this, 'set_subscription_pack_id_in_base_language' ], 10, 3 );
+        add_filter('dokan_vendor_subscription_package_title', [ $this, 'vendor_subscription_pack_title_translation' ], 10, 2 );
+        add_filter('dokan_vendor_subscription_package_id', [ $this, 'get_product_id_in_base_language' ] );
 		add_filter( 'dokan_get_navigation_url', [ $this, 'load_translated_url' ], 10, 2 );
 		add_filter( 'body_class', [ $this, 'add_dashboard_template_class_if_wpml' ], 99 );
 		add_filter( 'dokan_get_current_page_id', [ $this, 'dokan_set_current_page_id' ] );
@@ -477,6 +480,82 @@ class Dokan_WPML {
         }
 
         return wpml_object_id_filter( $page_id, 'page', true, ICL_LANGUAGE_CODE );
+    }
+
+
+    /**
+     * Store Vendor Subscription pack in default language.
+     *
+     * @since 1.0.11
+     *
+     * @param mixed $meta_value Meta Value
+     * @param string $meta_key Meta Key
+     * @param string $object_type Object Type
+     *
+     * @return int
+     */
+    public function set_subscription_pack_id_in_base_language( $meta_value, $meta_key, $object_type ) {
+        if ( 'product_package_id' !== $meta_key || 'user' !== $object_type ) {
+            return $meta_value;
+        }
+
+        return $this->get_product_id_in_base_language( absint( $meta_value ) );
+    }
+    /**
+     * Dokan get base product id from translated product id.
+     *
+     * @since 1.0.11
+     *
+     * @param int $product_id Product ID.
+     *
+     * @return int
+     */
+    public function get_product_id_in_base_language( $product_id ) {
+        if ( ! function_exists( 'wpml_object_id_filter' ) ) {
+            return $product_id;
+        }
+
+        $default_lang = apply_filters('wpml_default_language', null );
+
+        return wpml_object_id_filter( $product_id, 'product', true, $default_lang );
+    }
+
+    /**
+     * Get product id in current language.
+     *
+     * @since 1.0.11
+     *
+     * @param int $product_id Product ID.
+     *
+     * @return int
+     */
+    public function get_product_id_in_current_language( $product_id ) {
+        if ( ! function_exists( 'wpml_object_id_filter' ) ) {
+            return $product_id;
+        }
+
+        return wpml_object_id_filter( $product_id, 'product', true, ICL_LANGUAGE_CODE );
+    }
+
+    /**
+     * Vendor Subscription pack title translation.
+     *
+     * @since 1.0.11
+     *
+     * @param string $title Title.
+     * @param \WC_Product|bool $product Product.
+     *
+     * @return string
+     */
+    public function vendor_subscription_pack_title_translation( $title, $product ) {
+        if ( ! $product || ! function_exists( 'wc_get_product' ) ) {
+            return $title;
+        }
+
+        $product_id = $this->get_product_id_in_current_language( $product->get_id() );
+        $product    = wc_get_product( $product_id );
+
+        return $product ? $product->get_title() : $title;
     }
 
     /**
