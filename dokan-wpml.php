@@ -141,6 +141,14 @@ class Dokan_WPML {
 		add_action( 'init', [ $this, 'load_wpml_admin_post_actions' ], 10 );
 		add_action( 'dokan_product_change_status_after_save', [ $this, 'change_product_status' ], 10, 2 );
 		add_action( 'dokan_product_status_revert_after_save', [ $this, 'change_product_status' ], 10, 2 );
+
+        // Single string translation.
+        add_action( 'dokan_pro_register_shipping_status', [ $this, 'register_shipping_status_single_string' ] );
+        add_action( 'dokan_pro_register_abuse_report_reason', [ $this, 'register_abuse_report_single_string' ] );
+        add_action( 'dokan_pro_register_rms_reason', [ $this, 'register_rma_single_string' ] );
+        add_filter( 'dokan_pro_shipping_status', [ $this, 'get_translated_shipping_status' ] );
+        add_filter( 'dokan_pro_abuse_report_reason', [ $this, 'get_translated_abuse_report_reason' ] );
+        add_filter( 'dokan_pro_rma_reason', [ $this, 'get_translated_rma_reason' ] );
 	}
 
 	/**
@@ -719,6 +727,115 @@ class Dokan_WPML {
 			$translated_product->save();
 		}
 	}
+
+    /**
+     * Register single string.
+     *
+     * @since 1.0.11
+     *
+     * @param string $context This value gives the string you are about to register a context.
+     * @param string $name The name of the string which helps the translator understand what’s being translated.
+     * @param string $value The string that needs to be translated.
+     *
+     * @return void
+     */
+    public function register_single_string( $context, $name, $value ) {
+        do_action( 'wpml_register_single_string', $context, $name, $value );
+    }
+
+    /**
+     * Get translated single string.
+     *
+     * @since 1.0.11
+     *
+     * @param string $original_value The string’s original value.
+     * @param string $domain The string’s registered domain.
+     * @param string $name The string’s registered name.
+     * @param $language_code
+     *
+     * @return string
+     */
+    public function get_translated_single_string( $original_value, $domain, $name, $language_code = null ) {
+        return apply_filters( 'wpml_translate_single_string', $original_value, $domain, $name, $language_code );
+    }
+
+    /**
+     * Register shipping status single string.
+     *
+     * @since 1.0.11
+     *
+     * @param string $status Shipping Status.
+     *
+     * @return void
+     */
+    public function register_shipping_status_single_string( $status ) {
+        $this->register_single_string( 'dokan', 'Dokan Shipping Status: ' . $status, $status );
+    }
+
+    /**
+     * Register abuse report single string.
+     *
+     * @since 1.0.11
+     *
+     * @param string $reason Abuse report reason.
+     *
+     * @return void
+     */
+    public function register_abuse_report_single_string( $reason ) {
+        $this->register_single_string( 'dokan', 'Dokan Abuse Reason: ' . $reason, $reason );
+    }
+
+    /**
+     * Register RMA reason single string.
+     *
+     * @since 1.0.11
+     *
+     * @param string $reason RMA reason.
+     *
+     * @return void
+     */
+    public function register_rma_single_string( $reason ) {
+        $this->register_single_string( 'dokan', 'Dokan Refund and Returns Reason: ' . $reason, $reason );
+    }
+
+    /**
+     * Get translated shipping status.
+     *
+     * @since 1.0.11
+     *
+     * @param string $status Shipping Status.
+     *
+     * @return string
+     */
+    public function get_translated_shipping_status( $status ) {
+        return $this->get_translated_single_string( $status, 'dokan', 'Dokan Shipping Status: ' . $status );
+    }
+
+    /**
+     * Get translated abuse report reason.
+     *
+     * @since 1.0.11
+     *
+     * @param string $reason Abuse report reason.
+     *
+     * @return string
+     */
+    public function get_translated_abuse_report_reason( $reason ) {
+        return $this->get_translated_single_string( $reason, 'dokan', 'Dokan Abuse Reason: ' . $reason );
+    }
+
+    /**
+     * Get translated RMA reason.
+     *
+     * @since 1.0.11
+     *
+     * @param string $reason RMA reason.
+     *
+     * @return string
+     */
+    public function get_translated_rma_reason( $reason ) {
+        return $this->get_translated_single_string( $reason, 'dokan', 'Dokan Refund and Returns Reason: ' . $reason );
+    }
 
     /**
      * Add High Performance Order Storage Support
