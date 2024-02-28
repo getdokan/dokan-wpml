@@ -139,6 +139,7 @@ class Dokan_WPML {
 		add_filter( 'dokan_dashboard_nav_menu_key', [ $this, 'filter_dashboard_settings_key' ] );
 		add_filter( 'dokan_dashboard_nav_submenu_key', [ $this, 'filter_dashboard_settings_key' ] );
 		add_filter( 'wcml_vendor_addon_configuration', [ $this, 'add_vendor_capability' ] );
+        add_filter('icl_lang_sel_copy_parameters', [ $this, 'set_language_switcher_copy_param' ] );
 
 		add_action( 'init', [ $this, 'fix_store_category_query_arg' ], 10 );
 		add_action( 'init', [ $this, 'load_wpml_admin_post_actions' ], 10 );
@@ -390,6 +391,86 @@ class Dokan_WPML {
         }
 
         return $url;
+    }
+
+    /**
+     * Set Language switcher copy param
+     *
+     * @since 1.0.11
+     *
+     * @param array $params Copy params.
+     *
+     * @return array
+     */
+    public function set_language_switcher_copy_param( $params ) {
+        $dokan_params = [
+            'product_listing_search',
+            '_product_listing_filter_nonce',
+            'product_search_name',
+            'product_cat',
+            'post_status',
+            'date',
+            'product_type',
+            'pagenum',
+            'product_id',
+            'action',
+            '_dokan_edit_product_nonce',
+            'customer_id',
+            'search',
+            'order_date_start',
+            'order_date_end',
+            'order_status',
+            'dokan_order_filter',
+            'seller_order_filter_nonce',
+            'order_id',
+            '_wpnonce',
+            'order_date',
+            'security',
+            'subscription_id',
+            'coupons_type',
+            'post',
+            'view',
+            'coupon_nonce_url',
+            'delivery_type_filter',
+            'chart',
+            'start_date_alt',
+            'start_date',
+            'end_date',
+            'end_date_alt',
+            'dokan_report_filter_nonce',
+            'dokan_report_filter',
+            'comment_status',
+            'type',
+            '_withdraw_link_nonce',
+            'status',
+            'request',
+            'staff_id',
+            'booking_id',
+            'booking_status',
+            'calendar_month',
+            'tab',
+            'filter_bookings',
+            'calendar_year',
+            'id',
+            'tab',
+            'step',
+            'file',
+            'delimiter',
+            'character_encoding',
+            'products-imported',
+            'products-imported-variations',
+            'products-failed',
+            'products-updated',
+            'products-skipped',
+            'file-name',
+            'ticket_start_date',
+            'ticket_end_date',
+            'ticket_keyword',
+            'ticket_status',
+            'dokan-support-listing-search-nonce',
+        ];
+
+        return array_merge( $params, $dokan_params );
     }
 
     /**
