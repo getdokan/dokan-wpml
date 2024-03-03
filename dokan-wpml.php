@@ -153,6 +153,7 @@ class Dokan_WPML {
         add_filter( 'dokan_pro_shipping_status', [ $this, 'get_translated_shipping_status' ] );
         add_filter( 'dokan_pro_abuse_report_reason', [ $this, 'get_translated_abuse_report_reason' ] );
         add_filter( 'dokan_pro_rma_reason', [ $this, 'get_translated_rma_reason' ] );
+        add_filter( 'dokan_get_query_var', [ $this, 'get_translated_query_var' ] );
 	}
 
 	/**
@@ -253,7 +254,10 @@ class Dokan_WPML {
                 $name_arr = explode( '/', $name );
 
                 if ( isset( $name_arr[1] ) ) {
-                    $name = apply_filters( 'wpml_translate_single_string', $name_arr[0], $this->wp_endpoints, $name_arr[0], $current_lang ) . '/' . $name_arr[1];
+                    $name_arr = array_map( function ( $part ) use ( $current_lang ) {
+                        return apply_filters( 'wpml_translate_single_string', $part, $this->wp_endpoints, $part, $current_lang );
+                    }, $name_arr );
+                    $name = implode( '/', $name_arr );
                 } else {
                     $get_name = ( ! empty( $name_arr[0] ) ) ? $name_arr[0] : $name;
                     $name     = apply_filters( 'wpml_translate_single_string', $get_name, $this->wp_endpoints, $get_name, $current_lang );
@@ -995,6 +999,19 @@ class Dokan_WPML {
      */
     public function get_translated_rma_reason( $reason ) {
         return $this->get_translated_single_string( $reason, 'dokan', 'Dokan Refund and Returns Reason: ' . $reason );
+    }
+
+    /**
+     * Get translated query variable.
+     *
+     * @since 1.1.1
+     *
+     * @param string $query_var Query Variable.
+     *
+     * @return string
+     */
+    public function get_translated_query_var( $query_var ) {
+        return rawurlencode_deep( $this->translate_endpoint( $query_var ) );
     }
 
     /**
