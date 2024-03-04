@@ -152,6 +152,7 @@ class Dokan_WPML {
         add_action( 'dokan_pro_register_rms_reason', [ $this, 'register_rma_single_string' ] );
         add_filter( 'dokan_pro_shipping_status', [ $this, 'get_translated_shipping_status' ] );
         add_filter( 'dokan_pro_abuse_report_reason', [ $this, 'get_translated_abuse_report_reason' ] );
+        add_filter( 'dokan_pro_subscription_allowed_categories', [ $this, 'get_translated_allowed_categories' ] );
         add_filter( 'dokan_pro_rma_reason', [ $this, 'get_translated_rma_reason' ] );
 	}
 
@@ -1009,6 +1010,33 @@ class Dokan_WPML {
             \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true );
             \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'cart_checkout_blocks', __FILE__, true );
         }
+    }
+
+    /**
+     * Get translated allowed categories.
+     *
+     * @since 1.1.1
+     *
+     * @param array $cats Categories.
+     *
+     * @return array|int[]
+     */
+    public function get_translated_allowed_categories( $cats ) {
+        if ( ! function_exists( 'wpml_object_id_filter' ) ) {
+            return $cats;
+        }
+
+        return array_map(
+            function ( $cat ) {
+                return wpml_object_id_filter(
+                    $cat,
+                    'product_cat',
+                    true,
+                    ICL_LANGUAGE_CODE
+                );
+            },
+            $cats
+        );
     }
 } // Dokan_WPML
 
