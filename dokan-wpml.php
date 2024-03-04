@@ -300,7 +300,12 @@ class Dokan_WPML {
 
         if ( $subpage ) {
             $subpages    = explode( '/', $subpage );
-            $subpages[0] = $this->translate_endpoint( $subpages[0] );
+            $subpages    = array_map(
+                function ( $item ) {
+                    return $this->translate_endpoint( $item );
+                },
+                $subpages
+            );
             $subpage     = implode( '/', $subpages );
             $url         = function_exists( 'dokan_add_subpage_to_url' ) ? dokan_add_subpage_to_url( $url, $subpage ) : $url;
         }
