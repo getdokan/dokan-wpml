@@ -301,18 +301,16 @@ class Dokan_WPML {
         $url = get_permalink( $page_id );
 
         if ( $subpage ) {
-            $subpages    = explode( '/', $subpage );
-            error_log( print_r( $subpages,1 ) );
-
-            $subpages    = array_map(
+            $subpages = explode( '/', $subpage );
+            $subpages = array_map(
                 function ( $item ) {
                     return $this->translate_endpoint( $this->get_default_query_var( $item ), ICL_LANGUAGE_CODE );
                 },
                 $subpages
             );
 
-            $subpage     = implode( '/', $subpages );
-            $url         = function_exists( 'dokan_add_subpage_to_url' ) ? dokan_add_subpage_to_url( $url, $subpage ) : $url;
+            $subpage = implode( '/', $subpages );
+            $url     = function_exists( 'dokan_add_subpage_to_url' ) ? dokan_add_subpage_to_url( $url, $subpage ) : $url;
         }
 
         return $url;
