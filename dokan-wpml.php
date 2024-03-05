@@ -153,7 +153,8 @@ class Dokan_WPML {
         add_filter( 'dokan_pro_shipping_status', [ $this, 'get_translated_shipping_status' ] );
         add_filter( 'dokan_pro_abuse_report_reason', [ $this, 'get_translated_abuse_report_reason' ] );
         add_filter( 'dokan_pro_rma_reason', [ $this, 'get_translated_rma_reason' ] );
-        add_filter( 'dokan_get_query_var', [ $this, 'get_translated_query_var' ] );
+
+        add_filter( 'wp', [ $this, 'set_translated_query_var_to_default_query_var' ], 11 );
 	}
 
 	/**
@@ -255,6 +256,7 @@ class Dokan_WPML {
 
                 if ( isset( $name_arr[1] ) ) {
                     $name_arr = array_map( function ( $part ) use ( $current_lang ) {
+                        $part = $this->get_default_query_var( $part );
                         return apply_filters( 'wpml_translate_single_string', $part, $this->wp_endpoints, $part, $current_lang );
                     }, $name_arr );
                     $name = implode( '/', $name_arr );
@@ -278,8 +280,8 @@ class Dokan_WPML {
 	 *
 	 * @return string
 	 */
-    private function translate_endpoint( $endpoint ) {
-    	return apply_filters( 'wpml_translate_single_string', $endpoint, $this->wp_endpoints, $endpoint );
+    private function translate_endpoint( $endpoint, $language = null ) {
+    	return apply_filters( 'wpml_translate_single_string', $endpoint, $this->wp_endpoints, $endpoint, $language );
     }
 
     /**
@@ -300,12 +302,16 @@ class Dokan_WPML {
 
         if ( $subpage ) {
             $subpages    = explode( '/', $subpage );
+            error_log( print_r( $subpages,1 ) );
+
             $subpages    = array_map(
                 function ( $item ) {
-                    return $this->translate_endpoint( $item );
+                    return $this->translate_endpoint( $this->get_default_query_var( $item ), ICL_LANGUAGE_CODE );
                 },
                 $subpages
             );
+
+            error_log('reflect_page_url: ' . print_r( $subpages, 1 ) );
             $subpage     = implode( '/', $subpages );
             $url         = function_exists( 'dokan_add_subpage_to_url' ) ? dokan_add_subpage_to_url( $url, $subpage ) : $url;
         }
@@ -481,6 +487,56 @@ class Dokan_WPML {
 
         return array_merge( $params, $dokan_params );
     }
+
+    /**
+     * Get vendor dashboard settings submenu query vars.
+     *
+     * @return array
+     */
+    public function get_settings_query_vars_map() {
+        $query_vars     = [
+            'store',
+            'payment',
+            'rma',
+            'shipping',
+            'social',
+            'seo',
+            'regular-shipping',
+            'delivery-time',
+            'product-addon',
+            'payment-manage-dokan_razorpay',
+            'payment-manage-dokan_razorpay-edit',
+            'payment-manage-dokan_mangopay',
+            'payment-manage-dokan_mangopay-edit',
+            'payment-manage-dokan-paypal-marketplace',
+            'payment-manage-dokan-paypal-marketplace-edit',
+            'payment-manage-paypal',
+            'payment-manage-paypal-edit',
+            'payment-manage-skrill',
+            'payment-manage-skrill-edit',
+            'payment-manage-bank',
+            'payment-manage-bank-edit',
+            'payment-manage-dokan_stripe_express',
+            'payment-manage-dokan_stripe_express-edit',
+            'payment-manage-dokan-stripe-connect',
+            'payment-manage-dokan-stripe-connect-edit',
+            'payment-manage-dokan_custom',
+            'payment-manage-dokan_custom-edit',
+            'requested-quotes',
+            'distance-rate-shipping',
+            'table-rate-shipping',
+            'verification',
+        ];
+
+        $query_vars_map = [];
+
+        foreach ( $query_vars as $query_var ) {
+            $query_vars_map[ $query_var ] = $this->translate_endpoint( $query_var );
+        }
+
+        return $query_vars_map;
+    }
+
 
     /**
      * Add Dokan Dashboard body class when change language
@@ -1007,16 +1063,39 @@ class Dokan_WPML {
     }
 
     /**
-     * Get translated query variable.
+     * Get translated query variable and set default value.
      *
      * @since 1.1.1
+     */
+    public function set_translated_query_var_to_default_query_var() {
+        global $wp;
+
+        if ( empty( $wp->query_vars['settings'] ) ) {
+            return;
+        }
+        $settings_query_var_value = $wp->query_vars['settings'];
+        $settings_query_var_value = urldecode_deep( $settings_query_var_value );
+
+        $wp->query_vars['settings'] = $this->get_default_query_var( $settings_query_var_value );
+    }
+
+    /**
+     * Get default query variable from translated variable.
      *
      * @param string $query_var Query Variable.
      *
      * @return string
      */
-    public function get_translated_query_var( $query_var ) {
-        return rawurlencode_deep( $this->translate_endpoint( $query_var ) );
+    public function get_default_query_var( $query_var ) {
+        $query_var_map = $this->get_settings_query_vars_map();
+
+        $default_query_var = array_search( $query_var, $query_var_map, true );
+
+        if ( false === $default_query_var ) {
+            return $query_var;
+        }
+
+        return $default_query_var;
     }
 
     /**
