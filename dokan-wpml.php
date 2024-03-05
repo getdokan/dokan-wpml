@@ -530,6 +530,14 @@ class Dokan_WPML {
         $query_vars_map = [];
 
         foreach ( $query_vars as $query_var ) {
+            if ( function_exists( 'icl_register_string' ) ) {
+                try {
+                    icl_register_string( $this->wp_endpoints, $query_var, $query_var );
+                } catch ( Exception $e ) {
+                    // Do nothing.
+                }
+            }
+
             $query_vars_map[ $query_var ] = $this->translate_endpoint( $query_var );
         }
 
