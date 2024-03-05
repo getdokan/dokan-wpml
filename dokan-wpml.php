@@ -311,7 +311,6 @@ class Dokan_WPML {
                 $subpages
             );
 
-            error_log('reflect_page_url: ' . print_r( $subpages, 1 ) );
             $subpage     = implode( '/', $subpages );
             $url         = function_exists( 'dokan_add_subpage_to_url' ) ? dokan_add_subpage_to_url( $url, $subpage ) : $url;
         }
@@ -490,6 +489,8 @@ class Dokan_WPML {
 
     /**
      * Get vendor dashboard settings submenu query vars.
+     *
+     * @since 1.1.1
      *
      * @return array
      */
@@ -1081,6 +1082,8 @@ class Dokan_WPML {
 
     /**
      * Get default query variable from translated variable.
+     *
+     * @since 1.1.1
      *
      * @param string $query_var Query Variable.
      *
