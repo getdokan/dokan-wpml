@@ -7,7 +7,7 @@ Tested up to: 6.4.2
 WC requires at least: 5.5.0
 WC tested up to: 8.5.1
 Requires PHP: 7.4
-Stable tag: 1.0.10
+Stable tag: 1.1.0
 License: GPL v2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -51,6 +51,14 @@ Ans: Yes, you can contact the WPML team. They offer translation service via thir
 nothing here
 
 == Changelog ==
+
+v1.1.0 -> Mar 03, 2024
+---------------------------
+
+- **update:** single string translation support added for Shipping Status, RMA Reason, Abuse Report Reason #44
+- **update:** Vendor Subscription products various custom field value sync with Translation
+- **update:** Added Dokan Vendor Subscription WPML Support
+- **update:** Preserve query params on WPML Language switch
 
 v1.0.10 -> Jan 23, 2024
 ---------------------------
