@@ -140,6 +140,7 @@ class Dokan_WPML {
 		add_filter( 'dokan_dashboard_nav_submenu_key', [ $this, 'filter_dashboard_settings_key' ] );
 		add_filter( 'wcml_vendor_addon_configuration', [ $this, 'add_vendor_capability' ] );
         add_filter('icl_lang_sel_copy_parameters', [ $this, 'set_language_switcher_copy_param' ] );
+        add_filter( 'dokan_vendor_subscription_product_count_query', [ $this, 'set_vendor_subscription_product_count_query' ],10 ,3 );
 
 		add_action( 'init', [ $this, 'fix_store_category_query_arg' ], 10 );
 		add_action( 'init', [ $this, 'load_wpml_admin_post_actions' ], 10 );
@@ -563,6 +564,42 @@ class Dokan_WPML {
         return wpml_object_id_filter( $page_id, 'page', true, ICL_LANGUAGE_CODE );
     }
 
+    /**
+     * Set Vendor Subscription product count query on based language.
+     *
+     * @since 1.1.1
+     *
+     * @param string $query Product Query.
+     * @param int $vendor_id Vendor Id.
+     * @param array $allowed_status Allowed Status.
+     *
+     * @return string
+     */
+    public function set_vendor_subscription_product_count_query( $query, $vendor_id, $allowed_status ) {
+        global $wpdb;
+
+        if ( ! function_exists( 'wpml_get_default_language' ) ) {
+            return $query;
+        }
+
+        $status = "'" . implode( "','", $allowed_status ) . "'";
+
+        return $wpdb->prepare(
+            "SELECT count( posts.ID )
+                FROM {$wpdb->prefix}posts as posts
+                    JOIN {$wpdb->prefix}icl_translations wpml_translations
+                        ON posts.ID = wpml_translations.element_id
+                        AND wpml_translations.element_type = CONCAT('post_', posts.post_type)
+                WHERE 1=1
+                  AND posts.post_type = 'product'
+                  AND posts.post_author = %d
+                  AND posts.post_status IN ( {$status} )
+                  AND ( wpml_translations.language_code = %s OR 0 )
+                  ",
+            $vendor_id,
+            wpml_get_default_language()
+        );
+    }
 
     /**
      * Store Vendor Subscription pack in default language.
