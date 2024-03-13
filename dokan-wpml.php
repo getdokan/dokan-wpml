@@ -153,6 +153,8 @@ class Dokan_WPML {
         add_filter( 'dokan_pro_shipping_status', [ $this, 'get_translated_shipping_status' ] );
         add_filter( 'dokan_pro_abuse_report_reason', [ $this, 'get_translated_abuse_report_reason' ] );
         add_filter( 'dokan_pro_rma_reason', [ $this, 'get_translated_rma_reason' ] );
+
+        add_filter( 'wp', [ $this, 'set_translated_query_var_to_default_query_var' ], 11 );
 	}
 
 	/**
@@ -253,7 +255,11 @@ class Dokan_WPML {
                 $name_arr = explode( '/', $name );
 
                 if ( isset( $name_arr[1] ) ) {
-                    $name = apply_filters( 'wpml_translate_single_string', $name_arr[0], $this->wp_endpoints, $name_arr[0], $current_lang ) . '/' . $name_arr[1];
+                    $name_arr = array_map( function ( $part ) use ( $current_lang ) {
+                        $part = $this->get_default_query_var( $part );
+                        return apply_filters( 'wpml_translate_single_string', $part, $this->wp_endpoints, $part, $current_lang );
+                    }, $name_arr );
+                    $name = implode( '/', $name_arr );
                 } else {
                     $get_name = ( ! empty( $name_arr[0] ) ) ? $name_arr[0] : $name;
                     $name     = apply_filters( 'wpml_translate_single_string', $get_name, $this->wp_endpoints, $get_name, $current_lang );
@@ -274,8 +280,8 @@ class Dokan_WPML {
 	 *
 	 * @return string
 	 */
-    private function translate_endpoint( $endpoint ) {
-    	return apply_filters( 'wpml_translate_single_string', $endpoint, $this->wp_endpoints, $endpoint );
+    private function translate_endpoint( $endpoint, $language = null ) {
+    	return apply_filters( 'wpml_translate_single_string', $endpoint, $this->wp_endpoints, $endpoint, $language );
     }
 
     /**
@@ -295,10 +301,16 @@ class Dokan_WPML {
         $url = get_permalink( $page_id );
 
         if ( $subpage ) {
-            $subpages    = explode( '/', $subpage );
-            $subpages[0] = $this->translate_endpoint( $subpages[0] );
-            $subpage     = implode( '/', $subpages );
-            $url         = function_exists( 'dokan_add_subpage_to_url' ) ? dokan_add_subpage_to_url( $url, $subpage ) : $url;
+            $subpages = explode( '/', $subpage );
+            $subpages = array_map(
+                function ( $item ) {
+                    return $this->translate_endpoint( $this->get_default_query_var( $item ), ICL_LANGUAGE_CODE );
+                },
+                $subpages
+            );
+
+            $subpage = implode( '/', $subpages );
+            $url     = function_exists( 'dokan_add_subpage_to_url' ) ? dokan_add_subpage_to_url( $url, $subpage ) : $url;
         }
 
         return $url;
@@ -472,6 +484,66 @@ class Dokan_WPML {
 
         return array_merge( $params, $dokan_params );
     }
+
+    /**
+     * Get vendor dashboard settings submenu query vars.
+     *
+     * @since 1.1.1
+     *
+     * @return array
+     */
+    public function get_settings_query_vars_map() {
+        $query_vars     = [
+            'store',
+            'payment',
+            'rma',
+            'shipping',
+            'social',
+            'seo',
+            'regular-shipping',
+            'delivery-time',
+            'product-addon',
+            'payment-manage-dokan_razorpay',
+            'payment-manage-dokan_razorpay-edit',
+            'payment-manage-dokan_mangopay',
+            'payment-manage-dokan_mangopay-edit',
+            'payment-manage-dokan-paypal-marketplace',
+            'payment-manage-dokan-paypal-marketplace-edit',
+            'payment-manage-paypal',
+            'payment-manage-paypal-edit',
+            'payment-manage-skrill',
+            'payment-manage-skrill-edit',
+            'payment-manage-bank',
+            'payment-manage-bank-edit',
+            'payment-manage-dokan_stripe_express',
+            'payment-manage-dokan_stripe_express-edit',
+            'payment-manage-dokan-stripe-connect',
+            'payment-manage-dokan-stripe-connect-edit',
+            'payment-manage-dokan_custom',
+            'payment-manage-dokan_custom-edit',
+            'requested-quotes',
+            'distance-rate-shipping',
+            'table-rate-shipping',
+            'verification',
+        ];
+
+        $query_vars_map = [];
+
+        foreach ( $query_vars as $query_var ) {
+            if ( function_exists( 'icl_register_string' ) ) {
+                try {
+                    icl_register_string( $this->wp_endpoints, $query_var, $query_var );
+                } catch ( Exception $e ) {
+                    // Do nothing.
+                }
+            }
+
+            $query_vars_map[ $query_var ] = $this->translate_endpoint( $query_var );
+        }
+
+        return $query_vars_map;
+    }
+
 
     /**
      * Add Dokan Dashboard body class when change language
@@ -995,6 +1067,44 @@ class Dokan_WPML {
      */
     public function get_translated_rma_reason( $reason ) {
         return $this->get_translated_single_string( $reason, 'dokan', 'Dokan Refund and Returns Reason: ' . $reason );
+    }
+
+    /**
+     * Get translated query variable and set default value.
+     *
+     * @since 1.1.1
+     */
+    public function set_translated_query_var_to_default_query_var() {
+        global $wp;
+
+        if ( empty( $wp->query_vars['settings'] ) ) {
+            return;
+        }
+        $settings_query_var_value = $wp->query_vars['settings'];
+        $settings_query_var_value = urldecode_deep( $settings_query_var_value );
+
+        $wp->query_vars['settings'] = $this->get_default_query_var( $settings_query_var_value );
+    }
+
+    /**
+     * Get default query variable from translated variable.
+     *
+     * @since 1.1.1
+     *
+     * @param string $query_var Query Variable.
+     *
+     * @return string
+     */
+    public function get_default_query_var( $query_var ) {
+        $query_var_map = $this->get_settings_query_vars_map();
+
+        $default_query_var = array_search( $query_var, $query_var_map, true );
+
+        if ( false === $default_query_var ) {
+            return $query_var;
+        }
+
+        return $default_query_var;
     }
 
     /**
