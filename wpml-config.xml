@@ -19,5 +19,9 @@
         <custom-field action="copy">_lot_discount_quantity</custom-field>
         <custom-field action="copy">_lot_discount_amount</custom-field>
         <custom-field action="copy">_is_lot_discount</custom-field>
+        <custom-field action="copy">dokan_geo_latitude</custom-field>
+        <custom-field action="copy">dokan_geo_longitude</custom-field>
+        <custom-field action="copy">dokan_geo_public</custom-field>
+        <custom-field action="copy">dokan_geo_address</custom-field>
     </custom-fields>
 </wpml-config>
