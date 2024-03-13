@@ -25,5 +25,6 @@
         <custom-field action="copy">dokan_geo_address</custom-field>
         <custom-field action="copy">_dokan_rma_override_product</custom-field>
         <custom-field action="copy">_dokan_rma_settings</custom-field>
+        <custom-field action="copy">_dokan_wholesale_meta</custom-field>
     </custom-fields>
 </wpml-config>
