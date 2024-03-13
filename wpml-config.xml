@@ -23,5 +23,7 @@
         <custom-field action="copy">dokan_geo_longitude</custom-field>
         <custom-field action="copy">dokan_geo_public</custom-field>
         <custom-field action="copy">dokan_geo_address</custom-field>
+        <custom-field action="copy">_dokan_rma_override_product</custom-field>
+        <custom-field action="copy">_dokan_rma_settings</custom-field>
     </custom-fields>
 </wpml-config>
