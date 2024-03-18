@@ -3,12 +3,12 @@
  * Plugin Name: Dokan - WPML Integration
  * Plugin URI: https://wedevs.com/
  * Description: WPML and Dokan compatible package
- * Version: 1.0.10
+ * Version: 1.1.1
  * Author: weDevs
  * Author URI: https://wedevs.com/
  * Text Domain: dokan-wpml
  * WC requires at least: 5.5.0
- * WC tested up to: 8.5.1
+ * WC tested up to: 8.6.1
  * Domain Path: /languages/
  * License: GPL2
  */
@@ -125,6 +125,9 @@ class Dokan_WPML {
 		add_filter( 'dokan_force_page_redirect', [ $this, 'force_redirect_page' ], 90, 2 );
 
 		// Load all filters hook
+        add_filter('sanitize_user_meta_product_package_id', [ $this, 'set_subscription_pack_id_in_base_language' ], 10, 3 );
+        add_filter('dokan_vendor_subscription_package_title', [ $this, 'vendor_subscription_pack_title_translation' ], 10, 2 );
+        add_filter('dokan_vendor_subscription_package_id', [ $this, 'get_product_id_in_base_language' ] );
 		add_filter( 'dokan_get_navigation_url', [ $this, 'load_translated_url' ], 10, 2 );
 		add_filter( 'body_class', [ $this, 'add_dashboard_template_class_if_wpml' ], 99 );
 		add_filter( 'dokan_get_current_page_id', [ $this, 'dokan_set_current_page_id' ] );
@@ -136,11 +139,23 @@ class Dokan_WPML {
 		add_filter( 'dokan_dashboard_nav_menu_key', [ $this, 'filter_dashboard_settings_key' ] );
 		add_filter( 'dokan_dashboard_nav_submenu_key', [ $this, 'filter_dashboard_settings_key' ] );
 		add_filter( 'wcml_vendor_addon_configuration', [ $this, 'add_vendor_capability' ] );
+        add_filter('icl_lang_sel_copy_parameters', [ $this, 'set_language_switcher_copy_param' ] );
 
 		add_action( 'init', [ $this, 'fix_store_category_query_arg' ], 10 );
 		add_action( 'init', [ $this, 'load_wpml_admin_post_actions' ], 10 );
 		add_action( 'dokan_product_change_status_after_save', [ $this, 'change_product_status' ], 10, 2 );
 		add_action( 'dokan_product_status_revert_after_save', [ $this, 'change_product_status' ], 10, 2 );
+
+        // Single string translation.
+        add_action( 'dokan_pro_register_shipping_status', [ $this, 'register_shipping_status_single_string' ] );
+        add_action( 'dokan_pro_register_abuse_report_reason', [ $this, 'register_abuse_report_single_string' ] );
+        add_action( 'dokan_pro_register_rms_reason', [ $this, 'register_rma_single_string' ] );
+        add_filter( 'dokan_pro_shipping_status', [ $this, 'get_translated_shipping_status' ] );
+        add_filter( 'dokan_pro_abuse_report_reason', [ $this, 'get_translated_abuse_report_reason' ] );
+        add_filter( 'dokan_pro_subscription_allowed_categories', [ $this, 'get_translated_allowed_categories' ] );
+        add_filter( 'dokan_pro_rma_reason', [ $this, 'get_translated_rma_reason' ] );
+
+        add_filter( 'wp', [ $this, 'set_translated_query_var_to_default_query_var' ], 11 );
 	}
 
 	/**
@@ -241,7 +256,11 @@ class Dokan_WPML {
                 $name_arr = explode( '/', $name );
 
                 if ( isset( $name_arr[1] ) ) {
-                    $name = apply_filters( 'wpml_translate_single_string', $name_arr[0], $this->wp_endpoints, $name_arr[0], $current_lang ) . '/' . $name_arr[1];
+                    $name_arr = array_map( function ( $part ) use ( $current_lang ) {
+                        $part = $this->get_default_query_var( $part );
+                        return apply_filters( 'wpml_translate_single_string', $part, $this->wp_endpoints, $part, $current_lang );
+                    }, $name_arr );
+                    $name = implode( '/', $name_arr );
                 } else {
                     $get_name = ( ! empty( $name_arr[0] ) ) ? $name_arr[0] : $name;
                     $name     = apply_filters( 'wpml_translate_single_string', $get_name, $this->wp_endpoints, $get_name, $current_lang );
@@ -262,8 +281,8 @@ class Dokan_WPML {
 	 *
 	 * @return string
 	 */
-    private function translate_endpoint( $endpoint ) {
-    	return apply_filters( 'wpml_translate_single_string', $endpoint, $this->wp_endpoints, $endpoint );
+    private function translate_endpoint( $endpoint, $language = null ) {
+    	return apply_filters( 'wpml_translate_single_string', $endpoint, $this->wp_endpoints, $endpoint, $language );
     }
 
     /**
@@ -283,10 +302,16 @@ class Dokan_WPML {
         $url = get_permalink( $page_id );
 
         if ( $subpage ) {
-            $subpages    = explode( '/', $subpage );
-            $subpages[0] = $this->translate_endpoint( $subpages[0] );
-            $subpage     = implode( '/', $subpages );
-            $url         = function_exists( 'dokan_add_subpage_to_url' ) ? dokan_add_subpage_to_url( $url, $subpage ) : $url;
+            $subpages = explode( '/', $subpage );
+            $subpages = array_map(
+                function ( $item ) {
+                    return $this->translate_endpoint( $this->get_default_query_var( $item ), ICL_LANGUAGE_CODE );
+                },
+                $subpages
+            );
+
+            $subpage = implode( '/', $subpages );
+            $url     = function_exists( 'dokan_add_subpage_to_url' ) ? dokan_add_subpage_to_url( $url, $subpage ) : $url;
         }
 
         return $url;
@@ -382,6 +407,146 @@ class Dokan_WPML {
     }
 
     /**
+     * Set Language switcher copy param
+     *
+     * @since 1.0.11
+     *
+     * @param array $params Copy params.
+     *
+     * @return array
+     */
+    public function set_language_switcher_copy_param( $params ) {
+        $dokan_params = [
+            'product_listing_search',
+            '_product_listing_filter_nonce',
+            'product_search_name',
+            'product_cat',
+            'post_status',
+            'date',
+            'product_type',
+            'pagenum',
+            'product_id',
+            'action',
+            '_dokan_edit_product_nonce',
+            'customer_id',
+            'search',
+            'order_date_start',
+            'order_date_end',
+            'order_status',
+            'dokan_order_filter',
+            'seller_order_filter_nonce',
+            'order_id',
+            '_wpnonce',
+            'order_date',
+            'security',
+            'subscription_id',
+            'coupons_type',
+            'post',
+            'view',
+            'coupon_nonce_url',
+            'delivery_type_filter',
+            'chart',
+            'start_date_alt',
+            'start_date',
+            'end_date',
+            'end_date_alt',
+            'dokan_report_filter_nonce',
+            'dokan_report_filter',
+            'comment_status',
+            'type',
+            '_withdraw_link_nonce',
+            'status',
+            'request',
+            'staff_id',
+            'booking_id',
+            'booking_status',
+            'calendar_month',
+            'tab',
+            'filter_bookings',
+            'calendar_year',
+            'id',
+            'tab',
+            'step',
+            'file',
+            'delimiter',
+            'character_encoding',
+            'products-imported',
+            'products-imported-variations',
+            'products-failed',
+            'products-updated',
+            'products-skipped',
+            'file-name',
+            'ticket_start_date',
+            'ticket_end_date',
+            'ticket_keyword',
+            'ticket_status',
+            'dokan-support-listing-search-nonce',
+        ];
+
+        return array_merge( $params, $dokan_params );
+    }
+
+    /**
+     * Get vendor dashboard settings submenu query vars.
+     *
+     * @since 1.1.1
+     *
+     * @return array
+     */
+    public function get_settings_query_vars_map() {
+        $query_vars     = [
+            'store',
+            'payment',
+            'rma',
+            'shipping',
+            'social',
+            'seo',
+            'regular-shipping',
+            'delivery-time',
+            'product-addon',
+            'payment-manage-dokan_razorpay',
+            'payment-manage-dokan_razorpay-edit',
+            'payment-manage-dokan_mangopay',
+            'payment-manage-dokan_mangopay-edit',
+            'payment-manage-dokan-paypal-marketplace',
+            'payment-manage-dokan-paypal-marketplace-edit',
+            'payment-manage-paypal',
+            'payment-manage-paypal-edit',
+            'payment-manage-skrill',
+            'payment-manage-skrill-edit',
+            'payment-manage-bank',
+            'payment-manage-bank-edit',
+            'payment-manage-dokan_stripe_express',
+            'payment-manage-dokan_stripe_express-edit',
+            'payment-manage-dokan-stripe-connect',
+            'payment-manage-dokan-stripe-connect-edit',
+            'payment-manage-dokan_custom',
+            'payment-manage-dokan_custom-edit',
+            'requested-quotes',
+            'distance-rate-shipping',
+            'table-rate-shipping',
+            'verification',
+        ];
+
+        $query_vars_map = [];
+
+        foreach ( $query_vars as $query_var ) {
+            if ( function_exists( 'icl_register_string' ) ) {
+                try {
+                    icl_register_string( $this->wp_endpoints, $query_var, $query_var );
+                } catch ( Exception $e ) {
+                    // Do nothing.
+                }
+            }
+
+            $query_vars_map[ $query_var ] = $this->translate_endpoint( $query_var );
+        }
+
+        return $query_vars_map;
+    }
+
+
+    /**
      * Add Dokan Dashboard body class when change language
      *
      * @since 1.0.0
@@ -469,6 +634,82 @@ class Dokan_WPML {
         }
 
         return wpml_object_id_filter( $page_id, 'page', true, ICL_LANGUAGE_CODE );
+    }
+
+
+    /**
+     * Store Vendor Subscription pack in default language.
+     *
+     * @since 1.0.11
+     *
+     * @param mixed $meta_value Meta Value
+     * @param string $meta_key Meta Key
+     * @param string $object_type Object Type
+     *
+     * @return int
+     */
+    public function set_subscription_pack_id_in_base_language( $meta_value, $meta_key, $object_type ) {
+        if ( 'product_package_id' !== $meta_key || 'user' !== $object_type ) {
+            return $meta_value;
+        }
+
+        return $this->get_product_id_in_base_language( absint( $meta_value ) );
+    }
+    /**
+     * Dokan get base product id from translated product id.
+     *
+     * @since 1.0.11
+     *
+     * @param int $product_id Product ID.
+     *
+     * @return int
+     */
+    public function get_product_id_in_base_language( $product_id ) {
+        if ( ! function_exists( 'wpml_object_id_filter' ) ) {
+            return $product_id;
+        }
+
+        $default_lang = apply_filters('wpml_default_language', null );
+
+        return wpml_object_id_filter( $product_id, 'product', true, $default_lang );
+    }
+
+    /**
+     * Get product id in current language.
+     *
+     * @since 1.0.11
+     *
+     * @param int $product_id Product ID.
+     *
+     * @return int
+     */
+    public function get_product_id_in_current_language( $product_id ) {
+        if ( ! function_exists( 'wpml_object_id_filter' ) ) {
+            return $product_id;
+        }
+
+        return wpml_object_id_filter( $product_id, 'product', true, ICL_LANGUAGE_CODE );
+    }
+
+    /**
+     * Vendor Subscription pack title translation.
+     *
+     * @since 1.0.11
+     *
+     * @param string $title Title.
+     * @param \WC_Product|bool $product Product.
+     *
+     * @return string
+     */
+    public function vendor_subscription_pack_title_translation( $title, $product ) {
+        if ( ! $product || ! function_exists( 'wc_get_product' ) ) {
+            return $title;
+        }
+
+        $product_id = $this->get_product_id_in_current_language( $product->get_id() );
+        $product    = wc_get_product( $product_id );
+
+        return $product ? $product->get_title() : $title;
     }
 
     /**
@@ -721,6 +962,153 @@ class Dokan_WPML {
 	}
 
     /**
+     * Register single string.
+     *
+     * @since 1.0.11
+     *
+     * @param string $context This value gives the string you are about to register a context.
+     * @param string $name The name of the string which helps the translator understand what’s being translated.
+     * @param string $value The string that needs to be translated.
+     *
+     * @return void
+     */
+    public function register_single_string( $context, $name, $value ) {
+        do_action( 'wpml_register_single_string', $context, $name, $value );
+    }
+
+    /**
+     * Get translated single string.
+     *
+     * @since 1.0.11
+     *
+     * @param string $original_value The string’s original value.
+     * @param string $domain The string’s registered domain.
+     * @param string $name The string’s registered name.
+     * @param $language_code
+     *
+     * @return string
+     */
+    public function get_translated_single_string( $original_value, $domain, $name, $language_code = null ) {
+        return apply_filters( 'wpml_translate_single_string', $original_value, $domain, $name, $language_code );
+    }
+
+    /**
+     * Register shipping status single string.
+     *
+     * @since 1.0.11
+     *
+     * @param string $status Shipping Status.
+     *
+     * @return void
+     */
+    public function register_shipping_status_single_string( $status ) {
+        $this->register_single_string( 'dokan', 'Dokan Shipping Status: ' . $status, $status );
+    }
+
+    /**
+     * Register abuse report single string.
+     *
+     * @since 1.0.11
+     *
+     * @param string $reason Abuse report reason.
+     *
+     * @return void
+     */
+    public function register_abuse_report_single_string( $reason ) {
+        $this->register_single_string( 'dokan', 'Dokan Abuse Reason: ' . $reason, $reason );
+    }
+
+    /**
+     * Register RMA reason single string.
+     *
+     * @since 1.0.11
+     *
+     * @param string $reason RMA reason.
+     *
+     * @return void
+     */
+    public function register_rma_single_string( $reason ) {
+        $this->register_single_string( 'dokan', 'Dokan Refund and Returns Reason: ' . $reason, $reason );
+    }
+
+    /**
+     * Get translated shipping status.
+     *
+     * @since 1.0.11
+     *
+     * @param string $status Shipping Status.
+     *
+     * @return string
+     */
+    public function get_translated_shipping_status( $status ) {
+        return $this->get_translated_single_string( $status, 'dokan', 'Dokan Shipping Status: ' . $status );
+    }
+
+    /**
+     * Get translated abuse report reason.
+     *
+     * @since 1.0.11
+     *
+     * @param string $reason Abuse report reason.
+     *
+     * @return string
+     */
+    public function get_translated_abuse_report_reason( $reason ) {
+        return $this->get_translated_single_string( $reason, 'dokan', 'Dokan Abuse Reason: ' . $reason );
+    }
+
+    /**
+     * Get translated RMA reason.
+     *
+     * @since 1.0.11
+     *
+     * @param string $reason RMA reason.
+     *
+     * @return string
+     */
+    public function get_translated_rma_reason( $reason ) {
+        return $this->get_translated_single_string( $reason, 'dokan', 'Dokan Refund and Returns Reason: ' . $reason );
+    }
+
+    /**
+     * Get translated query variable and set default value.
+     *
+     * @since 1.1.1
+     */
+    public function set_translated_query_var_to_default_query_var() {
+        global $wp;
+
+        if ( empty( $wp->query_vars['settings'] ) ) {
+            return;
+        }
+        $settings_query_var_value = $wp->query_vars['settings'];
+        $settings_query_var_value = urldecode_deep( $settings_query_var_value );
+
+        $wp->query_vars['settings'] = $this->get_default_query_var( $settings_query_var_value );
+    }
+
+    /**
+     * Get default query variable from translated variable.
+     *
+     * @since 1.1.1
+     *
+     * @param string $query_var Query Variable.
+     *
+     * @return string
+     */
+    public function get_default_query_var( $query_var ) {
+        $query_var_map = $this->get_settings_query_vars_map();
+
+        $default_query_var = array_search( $query_var, $query_var_map, true );
+
+        if ( false === $default_query_var ) {
+            return $query_var;
+        }
+
+        return $default_query_var;
+    }
+
+    /**
      * Add High Performance Order Storage Support
      *
      * @since 1.0.10
@@ -732,6 +1120,33 @@ class Dokan_WPML {
             \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true );
             \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'cart_checkout_blocks', __FILE__, true );
         }
+    }
+
+    /**
+     * Get translated allowed categories.
+     *
+     * @since 1.1.1
+     *
+     * @param array $cats Categories.
+     *
+     * @return array|int[]
+     */
+    public function get_translated_allowed_categories( $cats ) {
+        if ( ! function_exists( 'wpml_object_id_filter' ) ) {
+            return $cats;
+        }
+
+        return array_map(
+            function ( $cat ) {
+                return wpml_object_id_filter(
+                    $cat,
+                    'product_cat',
+                    true,
+                    ICL_LANGUAGE_CODE
+                );
+            },
+            $cats
+        );
     }
 } // Dokan_WPML
 

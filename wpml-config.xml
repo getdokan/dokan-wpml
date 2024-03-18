@@ -1,0 +1,20 @@
+<wpml-config>
+    <custom-fields>
+        <custom-field action="copy">_no_of_product</custom-field>
+        <custom-field action="copy">_subscription_product_admin_commission_type</custom-field>
+        <custom-field action="copy">_subscription_product_admin_commission</custom-field>
+        <custom-field action="copy">dokan_subscription_allowed_product_types</custom-field>
+        <custom-field action="copy">_vendor_allowed_categories</custom-field>
+        <custom-field action="copy">_enable_gallery_restriction</custom-field>
+        <custom-field action="copy">_gallery_image_restriction_count</custom-field>
+        <custom-field action="copy">_enable_recurring_payment</custom-field>
+        <custom-field action="copy">_dokan_subscription_period_interval</custom-field>
+        <custom-field action="copy">_dokan_subscription_period</custom-field>
+        <custom-field action="copy">_dokan_subscription_length</custom-field>
+        <custom-field action="copy">dokan_subscription_enable_trial</custom-field>
+        <custom-field action="copy">dokan_subscription_trail_range</custom-field>
+        <custom-field action="copy">dokan_subscription_trial_period_types</custom-field>
+        <custom-field action="copy">_dokan_advertisement_slot_count</custom-field>
+        <custom-field action="copy">_dokan_advertisement_validity</custom-field>
+    </custom-fields>
+</wpml-config>
