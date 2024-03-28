@@ -578,14 +578,10 @@ class Dokan_WPML {
     public function set_vendor_subscription_product_count_query( $query, $vendor_id, $allowed_status ) {
         global $wpdb;
 
-        if ( ! function_exists( 'wpml_get_default_language' ) ) {
-            return $query;
-        }
-
         $status = "'" . implode( "','", $allowed_status ) . "'";
 
         return $wpdb->prepare(
-            "SELECT count( posts.ID )
+            "SELECT count( DISTINCT wpml_translations.trid ) as total
                 FROM {$wpdb->prefix}posts as posts
                     JOIN {$wpdb->prefix}icl_translations wpml_translations
                         ON posts.ID = wpml_translations.element_id
@@ -594,10 +590,8 @@ class Dokan_WPML {
                   AND posts.post_type = 'product'
                   AND posts.post_author = %d
                   AND posts.post_status IN ( {$status} )
-                  AND ( wpml_translations.language_code = %s OR 0 )
                   ",
-            $vendor_id,
-            wpml_get_default_language()
+            $vendor_id
         );
     }
 
