@@ -639,7 +639,7 @@ class Dokan_WPML {
     }
 
     /**
-     * Set store categories with translation to store.
+     * Set store categories with default language to store.
      *
      * @since 1.1.3
      *
@@ -648,20 +648,17 @@ class Dokan_WPML {
      * @return array
      */
     public function set_translated_category( $categories ) {
-        if ( ! function_exists( 'wpml_object_id_filter' ) || ! function_exists( 'wpml_get_active_languages' ) ) {
+        if ( ! function_exists( 'wpml_object_id_filter' ) || ! function_exists( 'wpml_get_default_language' ) ) {
             return $categories;
         }
 
-        $languages      = wpml_get_active_languages();
         $all_categories = [];
 
         foreach ( $categories as $store_cat_id ) {
-            foreach ( $languages as $language ) {
-                $translated_cat_id = wpml_object_id_filter( $store_cat_id, 'store_category', true, $language['code'] );
+            $translated_cat_id = wpml_object_id_filter( $store_cat_id, 'store_category', true, wpml_get_default_language() );
 
-                if ( ! in_array( $translated_cat_id, $all_categories ) ) {
-                    $all_categories[] = $translated_cat_id;
-                }
+            if ( ! in_array( $translated_cat_id, $all_categories ) ) {
+                $all_categories[] = $translated_cat_id;
             }
         }
 
@@ -717,6 +714,7 @@ class Dokan_WPML {
 
         return $this->get_product_id_in_base_language( absint( $meta_value ) );
     }
+
     /**
      * Dokan get base product id from translated product id.
      *
