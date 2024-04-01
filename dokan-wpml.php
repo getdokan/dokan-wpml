@@ -156,6 +156,8 @@ class Dokan_WPML {
         add_filter( 'dokan_pro_rma_reason', [ $this, 'get_translated_rma_reason' ] );
 
         add_filter( 'wp', [ $this, 'set_translated_query_var_to_default_query_var' ], 11 );
+        add_filter( 'dokan_set_store_categories', [ $this, 'set_translated_category' ] );
+        add_filter( 'dokan_get_store_categories_in_vendor', [ $this, 'get_translated_category' ] );
 	}
 
 	/**
@@ -636,6 +638,66 @@ class Dokan_WPML {
         return wpml_object_id_filter( $page_id, 'page', true, ICL_LANGUAGE_CODE );
     }
 
+    /**
+     * Set store categories with translation to store.
+     *
+     * @since 1.1.3
+     *
+     * @param array $categories Store Categories.
+     *
+     * @return array
+     */
+    public function set_translated_category( $categories ) {
+        if ( ! function_exists( 'wpml_object_id_filter' ) || ! function_exists( 'wpml_get_active_languages' ) ) {
+            return $categories;
+        }
+
+        $languages      = wpml_get_active_languages();
+        $all_categories = [];
+
+        foreach ( $categories as $store_cat_id ) {
+            foreach ( $languages as $language ) {
+                $translated_cat_id = wpml_object_id_filter( $store_cat_id, 'store_category', true, $language['code'] );
+
+                if ( ! in_array( $translated_cat_id, $all_categories ) ) {
+                    $all_categories[] = $translated_cat_id;
+                }
+            }
+        }
+
+        return $all_categories;
+    }
+
+    /**
+     * Get store categories with current translation to store.
+     *
+     * @since 1.1.3
+     *
+     * @param WP_Term[] $categories Store Categories.
+     *
+     * @return array
+     */
+    public function get_translated_category( $categories ) {
+        if ( ! function_exists( 'wpml_object_id_filter' ) ) {
+            return $categories;
+        }
+
+        $category_ids = array_unique(
+            array_map(
+                function ( $store_cat ) {
+                    return wpml_object_id_filter( $store_cat->term_id, 'store_category', true, null );
+                    },
+                $categories
+            )
+        );
+
+        return array_map(
+            function ( $category_id ) {
+                return get_term( $category_id, 'store_category' );
+            },
+            $category_ids
+        );
+    }
 
     /**
      * Store Vendor Subscription pack in default language.
