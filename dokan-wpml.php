@@ -649,21 +649,21 @@ class Dokan_WPML {
      * @return array
      */
     public function set_translated_category( $categories ) {
-        if ( ! function_exists( 'wpml_object_id_filter' ) || ! function_exists( 'wpml_get_default_language' ) ) {
+        if ( ! function_exists( 'wpml_object_id_filter' ) || ! function_exists( 'wpml_get_active_languages' ) ) {
             return $categories;
         }
 
         $all_categories = [];
+        $languages      = wpml_get_active_languages();
 
         foreach ( $categories as $store_cat_id ) {
-            $translated_cat_id = wpml_object_id_filter( $store_cat_id, 'store_category', true, wpml_get_default_language() );
-
-            if ( ! in_array( $translated_cat_id, $all_categories ) ) {
+            foreach ( $languages as $code => $language ) {
+                $translated_cat_id = wpml_object_id_filter( $store_cat_id, 'store_category', true, $code );
                 $all_categories[] = $translated_cat_id;
             }
         }
 
-        return $all_categories;
+        return array_unique( $all_categories );
     }
 
     /**
@@ -960,7 +960,7 @@ class Dokan_WPML {
         if (
             ! function_exists( 'dokan_is_store_categories_feature_on' ) ||
             ! dokan_is_store_categories_feature_on() ||
-            ! dokan_pro()->store_category ) {
+            ! empty( dokan_pro()->store_category ) ) {
             return;
         }
 
