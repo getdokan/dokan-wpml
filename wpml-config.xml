@@ -16,5 +16,24 @@
         <custom-field action="copy">dokan_subscription_trial_period_types</custom-field>
         <custom-field action="copy">_dokan_advertisement_slot_count</custom-field>
         <custom-field action="copy">_dokan_advertisement_validity</custom-field>
+        <custom-field action="copy">_lot_discount_quantity</custom-field>
+        <custom-field action="copy">_lot_discount_amount</custom-field>
+        <custom-field action="copy">_is_lot_discount</custom-field>
+        <custom-field action="copy">dokan_geo_latitude</custom-field>
+        <custom-field action="copy">dokan_geo_longitude</custom-field>
+        <custom-field action="copy">dokan_geo_public</custom-field>
+        <custom-field action="copy">dokan_geo_address</custom-field>
+        <custom-field action="copy">_dokan_rma_override_product</custom-field>
+        <custom-field action="copy">_dokan_rma_settings</custom-field>
+        <custom-field action="copy">_dokan_wholesale_meta</custom-field>
+        <custom-field action="copy">_dokan_min_max_meta</custom-field>
+        <custom-field action="copy">_dokan_geolocation_use_store_settings</custom-field>
+        <custom-field action="copy">_dokan_new_product_email_sent</custom-field>
+        <custom-field action="copy">dokan_product_quantity_discount</custom-field>
+        <custom-field action="copy">_product_addons_exclude_global</custom-field>
+        <custom-field action="copy">_product_addons</custom-field>
     </custom-fields>
+    <taxonomies>
+        <taxonomy translate="2">store_category</taxonomy>
+    </taxonomies>
 </wpml-config>
