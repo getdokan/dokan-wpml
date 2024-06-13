@@ -3,11 +3,11 @@ Contributors: wedevs
 Tags: WPML, i18n, l10n, Translation, Dokan
 Donate link: https://tareq.co/donate
 Requires at least: 5.6
-Tested up to: 6.4.3
+Tested up to: 6.5.4
 WC requires at least: 5.5.0
-WC tested up to: 8.7.0
+WC tested up to: 8.9.3
 Requires PHP: 7.4
-Stable tag: 1.1.2
+Stable tag: 1.1.3
 License: GPL v2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -51,6 +51,11 @@ Ans: Yes, you can contact the WPML team. They offer translation service via thir
 nothing here
 
 == Changelog ==
+
+v1.1.3 -> Jun 13, 2024
+---------------------------
+- **update:** Dokan Product meta-key set to copy in WPML
+- **fix:** Store category counts sync for multiple language
 
 v1.1.2 -> Apr 01, 2024
 ---------------------------
