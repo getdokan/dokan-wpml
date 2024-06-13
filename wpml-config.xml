@@ -17,4 +17,7 @@
         <custom-field action="copy">_dokan_advertisement_slot_count</custom-field>
         <custom-field action="copy">_dokan_advertisement_validity</custom-field>
     </custom-fields>
+    <taxonomies>
+        <taxonomy translate="2">store_category</taxonomy>
+    </taxonomies>
 </wpml-config>
