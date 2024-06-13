@@ -30,5 +30,7 @@
         <custom-field action="copy">_dokan_geolocation_use_store_settings</custom-field>
         <custom-field action="copy">_dokan_new_product_email_sent</custom-field>
         <custom-field action="copy">dokan_product_quantity_discount</custom-field>
+        <custom-field action="copy">_product_addons_exclude_global</custom-field>
+        <custom-field action="copy">_product_addons</custom-field>
     </custom-fields>
 </wpml-config>
