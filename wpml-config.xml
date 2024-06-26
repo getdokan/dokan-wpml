@@ -95,6 +95,24 @@
                     <key name="support">
                         <key name="menu_manager_title" />
                     </key>
+                    <key name="booking">
+                        <key name="menu_manager_title" />
+                    </key>
+                    <key name="inbox">
+                        <key name="menu_manager_title" />
+                    </key>
+                    <key name="product-questions-answers">
+                        <key name="menu_manager_title" />
+                    </key>
+                    <key name="auction">
+                        <key name="menu_manager_title" />
+                    </key>
+                    <key name="subscription">
+                        <key name="menu_manager_title" />
+                    </key>
+                    <key name="user-subscription">
+                        <key name="menu_manager_title" />
+                    </key>
                     <key name="settings">
                         <key name="menu_manager_title" />
                     </key>
