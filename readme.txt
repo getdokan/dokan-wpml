@@ -7,7 +7,7 @@ Tested up to: 6.5.5
 WC requires at least: 8.0.0
 WC tested up to: 9.0.2
 Requires PHP: 7.4
-Stable tag: 1.1.4
+Stable tag: 1.1.5
 License: GPL v2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -51,6 +51,10 @@ Ans: Yes, you can contact the WPML team. They offer translation service via thir
 nothing here
 
 == Changelog ==
+
+v1.1.5 -> Jul 10, 2024
+---------------------------
+- **new:**  Added string translation configuration for dokan dashboard menu manager.
 
 v1.1.3 -> Jun 13, 2024
 ---------------------------
