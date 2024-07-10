@@ -36,4 +36,118 @@
     <taxonomies>
         <taxonomy translate="2">store_category</taxonomy>
     </taxonomies>
+    <admin-texts>
+        <!-- Dashboard Menu Manager Menu Option Translatable start-->
+        <key name="dokan_menu_manager">
+            <key name="dashboard_menu_manager">
+                <key name="left_menus">
+                    <key name="dashboard">
+                        <key name="menu_manager_title" />
+                    </key>
+                    <key name="products">
+                        <key name="menu_manager_title" />
+                    </key>
+                    <key name="orders">
+                        <key name="menu_manager_title" />
+                    </key>
+                    <key name="requested-quotes">
+                        <key name="menu_manager_title" />
+                    </key>
+                    <key name="coupons">
+                        <key name="menu_manager_title" />
+                    </key>
+                    <key name="reports">
+                        <key name="menu_manager_title" />
+                    </key>
+                    <key name="delivery-time-dashboard">
+                        <key name="menu_manager_title" />
+                    </key>
+                    <key name="reviews">
+                        <key name="menu_manager_title" />
+                    </key>
+                    <key name="withdraw">
+                        <key name="menu_manager_title" />
+                    </key>
+                    <key name="reverse-withdraw">
+                        <key name="menu_manager_title" />
+                    </key>
+                    <key name="seller-badge">
+                        <key name="menu_manager_title" />
+                    </key>
+                    <key name="return-request">
+                        <key name="menu_manager_title" />
+                    </key>
+                    <key name="staffs">
+                        <key name="menu_manager_title" />
+                    </key>
+                    <key name="followers">
+                        <key name="menu_manager_title" />
+                    </key>
+                    <key name="announcement">
+                        <key name="menu_manager_title" />
+                    </key>
+                    <key name="analytics">
+                        <key name="menu_manager_title" />
+                    </key>
+                    <key name="tools">
+                        <key name="menu_manager_title" />
+                    </key>
+                    <key name="support">
+                        <key name="menu_manager_title" />
+                    </key>
+                    <key name="booking">
+                        <key name="menu_manager_title" />
+                    </key>
+                    <key name="inbox">
+                        <key name="menu_manager_title" />
+                    </key>
+                    <key name="product-questions-answers">
+                        <key name="menu_manager_title" />
+                    </key>
+                    <key name="auction">
+                        <key name="menu_manager_title" />
+                    </key>
+                    <key name="subscription">
+                        <key name="menu_manager_title" />
+                    </key>
+                    <key name="user-subscription">
+                        <key name="menu_manager_title" />
+                    </key>
+                    <key name="settings">
+                        <key name="menu_manager_title" />
+                    </key>
+                </key>
+                <key name="settings_sub_menu">
+                    <key name="store">
+                        <key name="menu_manager_title" />
+                    </key>
+                    <key name="payment">
+                        <key name="menu_manager_title" />
+                    </key>
+                    <key name="verification">
+                        <key name="menu_manager_title" />
+                    </key>
+                    <key name="delivery-time">
+                        <key name="menu_manager_title" />
+                    </key>
+                    <key name="shipping">
+                        <key name="menu_manager_title" />
+                    </key>
+                    <key name="shipstation">
+                        <key name="menu_manager_title" />
+                    </key>
+                    <key name="social">
+                        <key name="menu_manager_title" />
+                    </key>
+                    <key name="rma">
+                        <key name="menu_manager_title" />
+                    </key>
+                    <key name="seo">
+                        <key name="menu_manager_title" />
+                    </key>
+                </key>
+            </key>
+        </key>
+        <!-- Dashboard Menu Manager Menu Option Translatable end -->
+    </admin-texts>
 </wpml-config>
