@@ -2,12 +2,12 @@
 Contributors: wedevs
 Tags: WPML, i18n, l10n, Translation, Dokan
 Donate link: https://tareq.co/donate
-Requires at least: 5.6
-Tested up to: 6.5.4
-WC requires at least: 5.5.0
-WC tested up to: 8.9.3
+Requires at least: 6.4
+Tested up to: 6.5.5
+WC requires at least: 8.0.0
+WC tested up to: 9.0.2
 Requires PHP: 7.4
-Stable tag: 1.1.3
+Stable tag: 1.1.4
 License: GPL v2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
