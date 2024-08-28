@@ -3,12 +3,12 @@
  * Plugin Name: Dokan - WPML Integration
  * Plugin URI: https://wedevs.com/
  * Description: WPML and Dokan compatible package
- * Version: 1.1.5
+ * Version: 1.1.6
  * Author: weDevs
  * Author URI: https://wedevs.com/
  * Text Domain: dokan-wpml
  * WC requires at least: 8.0.0
- * WC tested up to: 9.0.2
+ * WC tested up to: 9.1.4
  * Domain Path: /languages/
  * License: GPL2
  */
@@ -38,6 +38,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  * **********************************************************************
  */
+
+use WeDevs\DokanPro\Modules\VendorVerification\Models\VerificationMethod;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -155,6 +157,10 @@ class Dokan_WPML {
         add_filter( 'dokan_pro_abuse_report_reason', [ $this, 'get_translated_abuse_report_reason' ] );
         add_filter( 'dokan_pro_subscription_allowed_categories', [ $this, 'get_translated_allowed_categories' ] );
         add_filter( 'dokan_pro_rma_reason', [ $this, 'get_translated_rma_reason' ] );
+        add_action( 'dokan_pro_vendor_verification_method_created', [ $this, 'register_vendor_verification_method'] );
+        add_action( 'dokan_pro_vendor_verification_method_updated', [ $this, 'register_vendor_verification_method'] );
+        add_filter( 'dokan_pro_vendor_verification_method_title', [ $this, 'get_translated_verification_method_title' ] );
+        add_filter( 'dokan_pro_vendor_verification_method_help_text', [ $this, 'get_translated_verification_method_help_text' ] );
 
         add_filter( 'wp', [ $this, 'set_translated_query_var_to_default_query_var' ], 11 );
         add_filter( 'dokan_set_store_categories', [ $this, 'set_translated_category' ] );
@@ -1239,6 +1245,51 @@ class Dokan_WPML {
             },
             $cats
         );
+    }
+
+    /**
+     * Register vendor vetification method for string translation.
+     *
+     * @since 1.1.6
+     *
+     * @param int $method_id Method ID.
+     *
+     * @return void
+     */
+    public function register_vendor_verification_method( int $method_id ) {
+        if ( ! class_exists( VerificationMethod::class ) ) {
+            return;
+        }
+
+        $method = new VerificationMethod( $method_id );
+        $this->register_single_string( 'dokan', 'Dokan Vendor Verification Method Title: ' . $method->get_title(), $method->get_title() );
+        $this->register_single_string( 'dokan', 'Dokan Vendor Verification Method Help Text: ' . $method->get_help_text(), $method->get_help_text() );
+    }
+
+    /**
+     * Get translated Verification Method Title.
+     *
+     * @since 1.1.6
+     *
+     * @param string $title Verification Method Title.
+     *
+     * @return string
+     */
+    public function get_translated_verification_method_title( $title ) {
+        return $this->get_translated_single_string( $title, 'dokan', 'Dokan Vendor Verification Method Title: ' . $title );
+    }
+
+    /**
+     * Get translated Verification Method help text.
+     *
+     * @since 1.1.6
+     *
+     * @param string $help_text Verification Method help text.
+     *
+     * @return string
+     */
+    public function get_translated_verification_method_help_text( $help_text ) {
+        return $this->get_translated_single_string( $help_text, 'dokan', 'Dokan Vendor Verification Method Help Text: ' . $help_text );
     }
 } // Dokan_WPML
 

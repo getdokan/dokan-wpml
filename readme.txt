@@ -3,11 +3,11 @@ Contributors: wedevs
 Tags: WPML, i18n, l10n, Translation, Dokan
 Donate link: https://tareq.co/donate
 Requires at least: 6.4
-Tested up to: 6.5.5
+Tested up to: 6.6.1
 WC requires at least: 8.0.0
-WC tested up to: 9.0.2
+WC tested up to: 9.1.4
 Requires PHP: 7.4
-Stable tag: 1.1.5
+Stable tag: 1.1.6
 License: GPL v2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -51,6 +51,10 @@ Ans: Yes, you can contact the WPML team. They offer translation service via thir
 nothing here
 
 == Changelog ==
+
+v1.1.6 -> Aug 28, 2024
+---------------------------
+- **update:** Vendor Verification Method Translation Support added.
 
 v1.1.5 -> Jul 10, 2024
 ---------------------------
