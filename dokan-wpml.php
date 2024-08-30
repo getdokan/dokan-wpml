@@ -162,6 +162,10 @@ class Dokan_WPML {
         add_filter( 'dokan_pro_vendor_verification_method_title', [ $this, 'get_translated_verification_method_title' ] );
         add_filter( 'dokan_pro_vendor_verification_method_help_text', [ $this, 'get_translated_verification_method_help_text' ] );
 
+        // Hooks for manage URL translations with Dokan and WPML.
+        add_action( 'dokan_disable_url_translation', [ $this, 'disable_url_translation' ] );
+        add_action( 'dokan_enable_url_translation', [ $this, 'enable_url_translation' ] );
+
         add_filter( 'wp', [ $this, 'set_translated_query_var_to_default_query_var' ], 11 );
         add_filter( 'dokan_set_store_categories', [ $this, 'set_translated_category' ] );
         add_filter( 'dokan_get_store_categories_in_vendor', [ $this, 'get_translated_category' ] );
@@ -1166,6 +1170,24 @@ class Dokan_WPML {
      */
     public function get_translated_rma_reason( $reason ) {
         return $this->get_translated_single_string( $reason, 'dokan', 'Dokan Refund and Returns Reason: ' . $reason );
+    }
+
+    /**
+     * Disables Dokan URL translation temporarily.
+     *
+     * @since 1.1.7
+     */
+    public function disable_url_translation() {
+        self::remove_url_translation();
+    }
+
+    /**
+     * Enables Dokan URL translation temporarily.
+     *
+     * @since 1.1.7
+     */
+    public function enable_url_translation() {
+        self::restore_url_translation();
     }
 
     /**
