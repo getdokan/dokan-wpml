@@ -198,7 +198,10 @@ class Dokan_WPML {
         add_action( 'dokan_after_saving_settings', [ $this, 'register_single_store_custom_endpoint' ], 10, 3 );
         add_action( 'dokan_rewrite_rules_loaded', [ $this, 'handle_translated_single_store_endpoint_rewrite' ] );
         add_action( 'wpml_st_add_string_translation', [ $this, 'handle_single_store_endpoint_translation_update' ] );
-    }
+
+		add_action( 'dokan_product_delete', [ $this, 'before_product_delete' ] );
+		add_action( 'dokan_product_bulk_delete', [ $this, 'before_product_delete' ] );
+	}
 
 	/**
 	 * Initialize the plugin tracker
@@ -1808,6 +1811,20 @@ class Dokan_WPML {
             )
         );
     }
+
+		/**
+		 * Support WPML delete post actions on the frontend dashboard.
+		 *
+		 * @since 1.1.7
+		 *
+		 * @return void
+		 */
+		public function before_product_delete() {
+			if ( class_exists( 'WPML_Frontend_Post_Actions' ) ) {
+				global $wpml_post_translations;
+				add_action( 'delete_post', [ $wpml_post_translations, 'delete_post_actions' ] );
+			}
+		}
 } // Dokan_WPML
 
 function dokan_load_wpml() { // phpcs:ignore
