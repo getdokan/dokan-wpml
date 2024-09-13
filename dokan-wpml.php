@@ -165,6 +165,9 @@ class Dokan_WPML {
         add_filter( 'wp', [ $this, 'set_translated_query_var_to_default_query_var' ], 11 );
         add_filter( 'dokan_set_store_categories', [ $this, 'set_translated_category' ] );
         add_filter( 'dokan_get_store_categories_in_vendor', [ $this, 'get_translated_category' ] );
+
+		add_action( 'dokan_product_delete', [ $this, 'before_product_delete' ] );
+		add_action( 'dokan_product_bulk_delete', [ $this, 'before_product_delete' ] );
 	}
 
 	/**
@@ -1291,6 +1294,20 @@ class Dokan_WPML {
     public function get_translated_verification_method_help_text( $help_text ) {
         return $this->get_translated_single_string( $help_text, 'dokan', 'Dokan Vendor Verification Method Help Text: ' . $help_text );
     }
+
+		/**
+		 * Support WPML delete post actions on the frontend dashboard.
+		 *
+		 * @since 1.1.7
+		 *
+		 * @return void
+		 */
+		public function before_product_delete() {
+			if ( class_exists( 'WPML_Frontend_Post_Actions' ) ) {
+				global $wpml_post_translations;
+				add_action( 'delete_post', [ $wpml_post_translations, 'delete_post_actions' ] );
+			}
+		}
 } // Dokan_WPML
 
 function dokan_load_wpml() { // phpcs:ignore
