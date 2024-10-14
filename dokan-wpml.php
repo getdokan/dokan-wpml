@@ -1289,7 +1289,7 @@ class Dokan_WPML {
      * @return string
      */
     public function get_translated_verification_method_help_text( $help_text ) {
-        return $this->get_translated_single_string( $help_text, 'dokan', 'Dokan Vendor Verification Method Help Text: ' . $help_text );
+        return $this->get_translated_single_string( $help_text, 'dokan', 'Dokan Vendor Verification Method Help Text: ' . substr( $help_text, 0, 116 ) );
     }
 } // Dokan_WPML
 
