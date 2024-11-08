@@ -5,9 +5,9 @@ Donate link: https://tareq.co/donate
 Requires at least: 6.4
 Tested up to: 6.6.1
 WC requires at least: 8.0.0
-WC tested up to: 9.1.4
+WC tested up to: 9.3.3
 Requires PHP: 7.4
-Stable tag: 1.1.6
+Stable tag: 1.1.7
 License: GPL v2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -51,6 +51,12 @@ Ans: Yes, you can contact the WPML team. They offer translation service via thir
 nothing here
 
 == Changelog ==
+
+v1.1.7 -> Nov 8, 2024
+---------------------------
+- **fix:** Widget and verification page help text translate issue fixed
+- **update:** Add Dokan URL translation pause & resume functionalities.
+- **update:** Add Printful url translation with settings query vars map.
 
 v1.1.6 -> Aug 28, 2024
 ---------------------------

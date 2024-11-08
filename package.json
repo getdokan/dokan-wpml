@@ -1,15 +1,20 @@
 {
   "name": "dokan-wpml",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "description": "WPML compatibility for dokan plugin",
   "author": "weDevs",
   "license": "GPL",
   "private": true,
+  "scripts": {
+    "makepot": "wp i18n make-pot --domain='dokan-wpml' --include='dokan-wpml.php' . languages/dokan-wpml.pot",
+    "release": "npm run makepot && npm run zip",
+    "zip": "node bin/zip"
+  },
   "devDependencies": {
-    "grunt": "^1.6.1",
-    "grunt-contrib-clean": "~0.5.0",
-    "grunt-contrib-compress": "^2.0.0",
-    "grunt-contrib-copy": "~0.5.0",
-    "grunt-wp-i18n": "^1.0.3"
+    "fs-extra": "^10.1.0",
+    "lodash": "^4.17.21"
+  },
+  "dependencies": {
+    "chalk": "^4.1.2"
   }
 }
