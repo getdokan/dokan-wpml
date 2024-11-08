@@ -539,7 +539,10 @@ class Dokan_WPML {
             'distance-rate-shipping',
             'table-rate-shipping',
             'verification',
+            'printful',
         ];
+
+        $query_vars = apply_filters( 'dokan_wpml_settings_query_var_map', $query_vars );
 
         $query_vars_map = [];
 
