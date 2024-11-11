@@ -3,12 +3,12 @@
  * Plugin Name: Dokan - WPML Integration
  * Plugin URI: https://wedevs.com/
  * Description: WPML and Dokan compatible package
- * Version: 1.1.6
+ * Version: 1.1.7
  * Author: weDevs
  * Author URI: https://wedevs.com/
  * Text Domain: dokan-wpml
  * WC requires at least: 8.0.0
- * WC tested up to: 9.1.4
+ * WC tested up to: 9.3.3
  * Domain Path: /languages/
  * License: GPL2
  */
@@ -161,6 +161,10 @@ class Dokan_WPML {
         add_action( 'dokan_pro_vendor_verification_method_updated', [ $this, 'register_vendor_verification_method'] );
         add_filter( 'dokan_pro_vendor_verification_method_title', [ $this, 'get_translated_verification_method_title' ] );
         add_filter( 'dokan_pro_vendor_verification_method_help_text', [ $this, 'get_translated_verification_method_help_text' ] );
+
+        // Hooks for manage URL translations with Dokan and WPML.
+        add_action( 'dokan_disable_url_translation', [ $this, 'disable_url_translation' ] );
+        add_action( 'dokan_enable_url_translation', [ $this, 'enable_url_translation' ] );
 
         add_filter( 'wp', [ $this, 'set_translated_query_var_to_default_query_var' ], 11 );
         add_filter( 'dokan_set_store_categories', [ $this, 'set_translated_category' ] );
@@ -535,7 +539,10 @@ class Dokan_WPML {
             'distance-rate-shipping',
             'table-rate-shipping',
             'verification',
+            'printful',
         ];
+
+        $query_vars = apply_filters( 'dokan_wpml_settings_query_var_map', $query_vars );
 
         $query_vars_map = [];
 
@@ -1169,6 +1176,24 @@ class Dokan_WPML {
     }
 
     /**
+     * Disables Dokan URL translation temporarily.
+     *
+     * @since 1.1.7
+     */
+    public function disable_url_translation() {
+        self::remove_url_translation();
+    }
+
+    /**
+     * Enables Dokan URL translation temporarily.
+     *
+     * @since 1.1.7
+     */
+    public function enable_url_translation() {
+        self::restore_url_translation();
+    }
+
+    /**
      * Get translated query variable and set default value.
      *
      * @since 1.1.1
@@ -1289,7 +1314,7 @@ class Dokan_WPML {
      * @return string
      */
     public function get_translated_verification_method_help_text( $help_text ) {
-        return $this->get_translated_single_string( $help_text, 'dokan', 'Dokan Vendor Verification Method Help Text: ' . $help_text );
+        return $this->get_translated_single_string( $help_text, 'dokan', 'Dokan Vendor Verification Method Help Text: ' . substr( $help_text, 0, 116 ) );
     }
 } // Dokan_WPML
 
