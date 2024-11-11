@@ -52,7 +52,7 @@ nothing here
 
 == Changelog ==
 
-v1.1.7 -> Nov 8, 2024
+v1.1.7 -> Nov 11, 2024
 ---------------------------
 - **fix:** Widget and verification page help text translate issue fixed
 - **update:** Add Dokan URL translation pause & resume functionalities.
