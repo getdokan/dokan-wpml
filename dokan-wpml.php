@@ -166,6 +166,13 @@ class Dokan_WPML {
         add_action( 'dokan_disable_url_translation', [ $this, 'disable_url_translation' ] );
         add_action( 'dokan_enable_url_translation', [ $this, 'enable_url_translation' ] );
 
+        // Request rule create/update hooks
+        add_action('dokan_quote_rule_created', [$this, 'dokan_request_quote_button_text_registration'], 10, 3);
+        add_action('dokan_quote_rule_updated', [$this, 'dokan_request_quote_button_text_registration'], 10, 3);
+
+        // Request quote button text filter
+
+        add_filter('dokan_request_quote_button_text', [$this, 'get_translated_dokan_request_quote_button_text'], 10, 2);
         add_filter( 'wp', [ $this, 'set_translated_query_var_to_default_query_var' ], 11 );
         add_filter( 'dokan_set_store_categories', [ $this, 'set_translated_category' ] );
         add_filter( 'dokan_get_store_categories_in_vendor', [ $this, 'get_translated_category' ] );
@@ -1315,6 +1322,38 @@ class Dokan_WPML {
      */
     public function get_translated_verification_method_help_text( $help_text ) {
         return $this->get_translated_single_string( $help_text, 'dokan', 'Dokan Vendor Verification Method Help Text: ' . substr( $help_text, 0, 116 ) );
+    }
+
+    /**
+     * Get the translated text for the Dokan request quote button.
+     *
+     * @param string $text The original button text.
+     * @param object $rule The rule object containing the ID.
+     *
+     * @return string The translated button text.
+     */
+    public function get_translated_dokan_request_quote_button_text(string $text, $rule): string
+    {
+        return $this->get_translated_single_string($text, 'dokan', 'Dokan Request Quote Button Text: ' . $rule->id);
+    }
+
+    /**
+     * Registers the request quote button text for translation.
+     *
+     * @param bool $action The action status.
+     * @param array $args The arguments containing the button text.
+     * @param int $rule_id The ID of the rule.
+     *
+     * @return void
+     */
+    public function dokan_request_quote_button_text_registration(bool $action, array $args, int $rule_id)
+    {
+        if (! $action) {
+            return;
+        }
+        $button_text = $args['button_text'];
+        $this->register_single_string('dokan', 'Dokan Request Quote Button Text: ' . $rule_id, $button_text);
+
     }
 } // Dokan_WPML
 
