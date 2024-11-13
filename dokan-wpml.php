@@ -167,12 +167,15 @@ class Dokan_WPML {
         add_action( 'dokan_enable_url_translation', [ $this, 'enable_url_translation' ] );
 
         // Request rule create/update hooks
-        add_action('dokan_quote_rule_created', [$this, 'dokan_request_quote_button_text_registration'], 10, 3);
-        add_action('dokan_quote_rule_updated', [$this, 'dokan_request_quote_button_text_registration'], 10, 3);
+        add_action( 'dokan_quote_rule_created', [$this, 'dokan_request_quote_button_text_registration'], 10, 3 );
+        add_action( 'dokan_quote_rule_updated', [$this, 'dokan_request_quote_button_text_registration'], 10, 3 );
 
         // Request quote button text filter
 
-        add_filter('dokan_request_quote_button_text', [$this, 'get_translated_dokan_request_quote_button_text'], 10, 2);
+        add_filter( 'dokan_request_quote_button_text', [$this, 'get_translated_dokan_request_quote_button_text'], 10, 2 );
+
+        // Request quote price hide filter
+        add_filter( 'dokan_request_quote_price_hide', [$this, 'get_translated_dokan_request_quote_price_hide'], 10, 2 );
         add_filter( 'wp', [ $this, 'set_translated_query_var_to_default_query_var' ], 11 );
         add_filter( 'dokan_set_store_categories', [ $this, 'set_translated_category' ] );
         add_filter( 'dokan_get_store_categories_in_vendor', [ $this, 'get_translated_category' ] );
@@ -1334,7 +1337,12 @@ class Dokan_WPML {
      */
     public function get_translated_dokan_request_quote_button_text(string $text, $rule): string
     {
-        return $this->get_translated_single_string($text, 'dokan', 'Dokan Request Quote Button Text: ' . $rule->id);
+        return $this->get_translated_single_string( $text, 'dokan', 'Dokan Request Quote Button Text: ' . $rule->id );
+    }
+
+    public function get_translated_dokan_request_quote_price_hide(string $text, $rule): string
+    {
+        return $this->get_translated_single_string( $text, 'dokan', 'Dokan Request Quote Hide Price Text: ' . $rule->id );
     }
 
     /**
@@ -1352,7 +1360,11 @@ class Dokan_WPML {
             return;
         }
         $button_text = $args['button_text'];
-        $this->register_single_string('dokan', 'Dokan Request Quote Button Text: ' . $rule_id, $button_text);
+        $this->register_single_string( 'dokan', 'Dokan Request Quote Button Text: ' . $rule_id, $button_text );
+
+        $hide_price_text = $args['hide_price_text'];
+
+        $this->register_single_string( 'dokan', 'Dokan Request Quote Hide Price Text: ' . $rule_id, $hide_price_text );
 
     }
 } // Dokan_WPML
