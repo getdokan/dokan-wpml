@@ -169,6 +169,13 @@ class Dokan_WPML {
         add_filter( 'wp', [ $this, 'set_translated_query_var_to_default_query_var' ], 11 );
         add_filter( 'dokan_set_store_categories', [ $this, 'set_translated_category' ] );
         add_filter( 'dokan_get_store_categories_in_vendor', [ $this, 'get_translated_category' ] );
+
+        add_action( 'dokan_vendor_vacation_message_updated', [ $this, 'dokan_vendor_vacation_message_updated' ], 10, 3);
+        add_filter( 'dokan_get_vendor_vacation_message', [ $this, 'get_translated_dokan_vendor_vacation_message' ], 10, 2 );
+
+        add_action( 'dokan_vendor_biography_updated', [ $this, 'dokan_vendor_biography_updated' ], 10, 3);
+        add_filter( 'dokan_get_vendor_biography_text', [ $this, 'get_translated_dokan_vendor_biography_text' ], 10, 2 );
+
 	}
 
 	/**
@@ -1316,6 +1323,64 @@ class Dokan_WPML {
     public function get_translated_verification_method_help_text( $help_text ) {
         return $this->get_translated_single_string( $help_text, 'dokan', 'Dokan Vendor Verification Method Help Text: ' . substr( $help_text, 0, 116 ) );
     }
+
+    /**
+     * Translate Vendor Vacation Message
+     *
+     * @param $text
+     * @param $name
+     *
+     * @return void
+     */
+    public function dokan_vendor_vacation_message_updated($text, $name) {
+        $this->register_single_string(
+            'dokan',
+            'Vendor Vacation Message: ' . $name,
+            $text
+        );
+    }
+
+    /**
+     * Translated Vendor Vacation Message
+     *
+     * @param string $text
+     * @param $name
+     *
+     * @return string
+     */
+    public function get_translated_dokan_vendor_vacation_message(string $text , $name) {
+        return $this->get_translated_single_string( $text, 'dokan', 'Vendor Vacation Message: '.$name );
+    }
+
+
+    /**
+     * Translate Vendor Biography Text
+     *
+     * @param $text
+     * @param $name
+     *
+     * @return void
+     */
+    public function dokan_vendor_biography_updated($text, $name) {
+        $this->register_single_string(
+            'dokan',
+            'Vendor Biography Text: ' . $name,
+            $text
+        );
+    }
+
+    /**
+     * Translated Vendor Biography Text
+     *
+     * @param string $text
+     * @param $name
+     *
+     * @return string
+     */
+    public function get_translated_dokan_vendor_biography_text(string $text , $name) {
+        return $this->get_translated_single_string( $text, 'dokan', 'Vendor Biography Text: '.$name );
+    }
+
 } // Dokan_WPML
 
 function dokan_load_wpml() { // phpcs:ignore
