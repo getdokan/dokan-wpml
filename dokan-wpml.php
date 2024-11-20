@@ -1359,10 +1359,10 @@ class Dokan_WPML {
         if (! $action) {
             return;
         }
-        $button_text = $args['button_text'];
+        $button_text = $args['button_text'] ?? '';
         $this->register_single_string( 'dokan', 'Dokan Request Quote Button Text: ' . $rule_id, $button_text );
 
-        $hide_price_text = $args['hide_price_text'];
+        $hide_price_text = $args['hide_price_text'] ?? '';
 
         $this->register_single_string( 'dokan', 'Dokan Request Quote Hide Price Text: ' . $rule_id, $hide_price_text );
 
