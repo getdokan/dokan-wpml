@@ -76,6 +76,8 @@ class Dokan_WPML {
      * @uses add_action()
      */
     public function __construct() {
+        require_once __DIR__ . '/vendor/autoload.php';
+
         register_activation_hook( __FILE__, [ $this, 'dependency_missing_notice' ] );
 
         // Localize our plugin
