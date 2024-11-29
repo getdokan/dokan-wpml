@@ -10,9 +10,49 @@
         }
     ],
     "minimum-stability": "dev",
-    "autoload": {},
+    "autoload": {
+        "psr-4": {
+            "WeDevs\\DokanWpml\\Dependencies\\": "dependencies/"
+        }
+    },
     "require": {
         "php": ">=7.4",
         "appsero/client": "^v2.0.4"
+    },
+    "require-dev": {
+        "coenjacobs/mozart": "^0.7.1"
+    },
+    "scripts": {
+        "post-install-cmd": [
+            "[ $COMPOSER_DEV_MODE -eq 0 ] || \"vendor/bin/mozart\" compose",
+            "composer dump-autoload"
+        ],
+        "post-update-cmd": [
+            "[ $COMPOSER_DEV_MODE -eq 0 ] || \"vendor/bin/mozart\" compose",
+            "composer dump-autoload"
+        ]
+    },
+    "extra": {
+        "mozart": {
+            "dep_namespace": "WeDevs\\DokanWpml\\Dependencies\\",
+            "dep_directory": "/dependencies/",
+            "classmap_directory": "/dependencies/classes/",
+            "classmap_prefix": "Dokan_Wpml_",
+            "packages": [
+                "appsero/updater",
+                "appsero/client"
+            ],
+            "excluded_packages": [
+                "psr/container"
+            ],
+            "override_autoload": {
+                "google/apiclient": {
+                    "classmap": [
+                        "src/"
+                    ]
+                }
+            },
+            "delete_vendor_directories": true
+        }
     }
 }

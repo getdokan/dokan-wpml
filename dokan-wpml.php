@@ -181,7 +181,7 @@ class Dokan_WPML {
 	 * @return void
 	 */
 	public function appsero_init_tracker() {
-		$client = new \Appsero\Client( 'f7973783-e0d0-4d56-bbba-229e5581b0cd', 'Dokan - WPML Integration', __FILE__ );
+		$client = new WeDevs\DokanWpml\Dependencies\Appsero\Client( 'f7973783-e0d0-4d56-bbba-229e5581b0cd', 'Dokan - WPML Integration', __FILE__ );
 
 		$this->insights = $client->insights();
 
