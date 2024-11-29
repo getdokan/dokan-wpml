@@ -39,7 +39,6 @@
             "classmap_directory": "/dependencies/classes/",
             "classmap_prefix": "Dokan_Wpml_",
             "packages": [
-                "appsero/updater",
                 "appsero/client"
             ],
             "excluded_packages": [
