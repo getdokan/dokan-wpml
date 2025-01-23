@@ -170,8 +170,11 @@ class Dokan_WPML {
         add_filter( 'dokan_set_store_categories', [ $this, 'set_translated_category' ] );
         add_filter( 'dokan_get_store_categories_in_vendor', [ $this, 'get_translated_category' ] );
 
+        // Single store endpoint translation support.
         add_action( 'dokan_after_saving_settings', [ $this, 'register_vendor_store_url_slug' ], 10, 3 );
         add_filter( 'dokan_get_store_url', [ $this, 'get_translated_vendor_store_url_slug' ], 10, 2 );
+        add_action( 'dokan_rewrite_rules_loaded', [ $this, 'rewrite_rules_for_translated_store_url' ] );
+        add_action( 'wpml_st_add_string_translation', [ $this, 'handle_store_url_slug_translation_update' ] );
 	}
 
     /**
@@ -186,8 +189,14 @@ class Dokan_WPML {
      * @return void
      */
     public function register_vendor_store_url_slug( string $option_name, array $option_value, array $old_options) {
-        if ( 'dokan_general' === $option_name && isset( $old_options['custom_store_url'] ) && $old_options['custom_store_url'] !== $option_value['custom_store_url'] ) {
-            $this->register_single_string( 'dokan-lite', 'Dokan vendor store URL slug', $option_value['custom_store_url'] );
+        if ( 'dokan_general' !== $option_name || !isset( $old_options['custom_store_url'] ) || $old_options['custom_store_url'] === $option_value['custom_store_url'] ) {
+            return;
+        }
+
+        try {
+            icl_register_string( $this->wp_endpoints, $option_value['custom_store_url'], $option_value['custom_store_url'], false, wpml_get_default_language() );
+        } catch ( Exception $e ) {
+            dokan_log( 'Dokan WPML - Error on registering vendor store URL endpoint: ' . $e->getMessage() );
         }
     }
 
@@ -204,8 +213,134 @@ class Dokan_WPML {
     public function get_translated_vendor_store_url_slug( $store_url, $custom_url_slug ) {
         return str_replace(
             $custom_url_slug,
-            $this->get_translated_single_string( $custom_url_slug, 'dokan-lite', 'Dokan vendor store URL slug' ),
+            $this->translate_endpoint( $custom_url_slug, null ),
             $store_url
+        );
+    }
+
+    /**
+     * Rewrite Rules for Translated Store URL.
+     *
+     * @since 1.1.8
+     *
+     * @param string $url_slug URL slug.
+     *
+     * @return void
+     */
+    public function rewrite_rules_for_translated_store_url( string $url_slug ) {
+        global $sitepress;
+
+        if ( ! $sitepress ) {
+            return;
+        }
+
+        $languages = $sitepress->get_active_languages();
+
+        $slug_list = [];
+
+        foreach ( $languages as $code => $language ) {
+            $translated_slug = $this->translate_endpoint( $url_slug, $code );
+
+            if ( $translated_slug === $url_slug ) {
+                continue;
+            }
+
+            $slug_list[] = $translated_slug;
+        }
+
+        foreach ( $slug_list as $translated_slug ) {
+
+            $this->add_rewrite_rules( $translated_slug, $url_slug );
+        }
+
+        flush_rewrite_rules();
+    }
+
+    /**
+     * Add Rewrite Rules.
+     *
+     * @since 1.1.8
+     *
+     * @param string $regex_slug Regex Slug
+     * @param string $query_slug Query Slug
+     * @param string $after      Position after
+     *
+     * @return void
+     */
+    public function add_rewrite_rules( string $regex_slug, string $query_slug, string $after = 'top' ) {
+        add_rewrite_rule( $regex_slug . '/([^/]+)/?$', 'index.php?' . $query_slug . '=$matches[1]', $after );
+        add_rewrite_rule( $regex_slug . '/([^/]+)/page/?([0-9]{1,})/?$', 'index.php?' . $query_slug . '=$matches[1]&paged=$matches[2]', $after );
+
+        add_rewrite_rule( $regex_slug . '/([^/]+)/section/?([0-9]{1,})/?$', 'index.php?' . $query_slug . '=$matches[1]&term=$matches[2]&term_section=true', $after );
+        add_rewrite_rule( $regex_slug . '/([^/]+)/section/?([0-9]{1,})/page/?([0-9]{1,})/?$', 'index.php?' . $query_slug . '=$matches[1]&term=$matches[2]&paged=$matches[3]&term_section=true', $after );
+
+        add_rewrite_rule( $regex_slug . '/([^/]+)/toc?$', 'index.php?' . $query_slug . '=$matches[1]&toc=true', $after );
+        add_rewrite_rule( $regex_slug . '/([^/]+)/toc/page/?([0-9]{1,})/?$', 'index.php?' . $query_slug . '=$matches[1]&paged=$matches[2]&toc=true', $after );
+    }
+
+    /**
+     * Handle Store URL Slug Translation Update.
+     *
+     * @since 1.1.8
+     *
+     * @param int $translated_string_id Translated string ID.
+     *
+     * @return void
+     */
+    public function handle_store_url_slug_translation_update( int $translated_string_id ) {
+        $original_string_id = $this->get_original_string_id( $translated_string_id );
+
+
+        if ( ! $original_string_id ) {
+            return;
+        }
+
+        $original_string_value = $this->get_original_string_value( $original_string_id );
+
+        $this->rewrite_rules_for_translated_store_url( $original_string_value );
+    }
+
+    /**
+     * Get Original String ID Using Translated String ID.
+     *
+     * @since 1.1.8
+     *
+     * @param int $translated_string_id Translated string ID
+     *
+     * @return int|null Original string ID or null if not found
+     */
+    public function get_original_string_id( int $translated_string_id ): ?int {
+        global $wpdb;
+
+        return $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT string_id
+                     FROM {$wpdb->prefix}icl_string_translations
+                     WHERE id = %d",
+                $translated_string_id
+            )
+        );
+    }
+
+    /**
+     * Get Original String Value by ID.
+     *
+     * @since 1.1.8
+     *
+     * @param int $string_id Original string ID
+     *
+     * @return string|null String value or null if not found
+     */
+    function get_original_string_value( int $string_id ): ?string {
+        global $wpdb;
+
+        return $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT value
+                    FROM {$wpdb->prefix}icl_strings
+                    WHERE id = %d",
+                $string_id
+            )
         );
     }
 
