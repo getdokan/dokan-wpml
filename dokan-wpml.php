@@ -169,7 +169,40 @@ class Dokan_WPML {
         add_filter( 'wp', [ $this, 'set_translated_query_var_to_default_query_var' ], 11 );
         add_filter( 'dokan_set_store_categories', [ $this, 'set_translated_category' ] );
         add_filter( 'dokan_get_store_categories_in_vendor', [ $this, 'get_translated_category' ] );
+
+        add_action( 'dokan_after_saving_settings', [ $this, 'register_vendor_store_url_slug' ], 10, 3 );
+        add_filter( 'dokan_store_url_slug', [ $this, 'get_translated_vendor_store_url_slug' ] );
 	}
+
+    /**
+     * Register Vendor Store URL Slug.
+     *
+     * @since 1.1.8
+     *
+     * @param string $option_name URL slug.
+     * @param array $option_value URL slug.
+     * @param array $old_options URL slug.
+     *
+     * @return void
+     */
+    public function register_vendor_store_url_slug( string $option_name, array $option_value, array $old_options) {
+        if ( 'dokan_general' === $option_name && isset( $old_options['custom_store_url'] ) && $old_options['custom_store_url'] !== $option_value['custom_store_url'] ) {
+            $this->register_single_string( 'dokan-lite', 'Dokan vendor store URL slug', $option_value['custom_store_url'] );
+        }
+    }
+
+    /**
+     * Get Translated Vendor Store URL Slug.
+     *
+     * @since 1.1.8
+     *
+     * @param string $url_slug URL slug.
+     *
+     * @return string
+     */
+    public function get_translated_vendor_store_url_slug( $url_slug ) {
+        return $this->get_translated_single_string( $url_slug, 'dokan-lite', 'Dokan vendor store URL slug' );
+    }
 
 	/**
 	 * Initialize the plugin tracker
