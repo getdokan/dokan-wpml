@@ -171,7 +171,7 @@ class Dokan_WPML {
         add_filter( 'dokan_get_store_categories_in_vendor', [ $this, 'get_translated_category' ] );
 
         add_action( 'dokan_after_saving_settings', [ $this, 'register_vendor_store_url_slug' ], 10, 3 );
-        add_filter( 'dokan_store_url_slug', [ $this, 'get_translated_vendor_store_url_slug' ] );
+        add_filter( 'dokan_get_store_url', [ $this, 'get_translated_vendor_store_url_slug' ], 10, 2 );
 	}
 
     /**
@@ -196,12 +196,17 @@ class Dokan_WPML {
      *
      * @since 1.1.8
      *
-     * @param string $url_slug URL slug.
+     * @param string $store_url        Store URL.
+     * @param string $custom_url_slug Store URL slug.
      *
      * @return string
      */
-    public function get_translated_vendor_store_url_slug( $url_slug ) {
-        return $this->get_translated_single_string( $url_slug, 'dokan-lite', 'Dokan vendor store URL slug' );
+    public function get_translated_vendor_store_url_slug( $store_url, $custom_url_slug ) {
+        return str_replace(
+            $custom_url_slug,
+            $this->get_translated_single_string( $custom_url_slug, 'dokan-lite', 'Dokan vendor store URL slug' ),
+            $store_url
+        );
     }
 
 	/**
