@@ -171,178 +171,12 @@ class Dokan_WPML {
         add_filter( 'dokan_get_store_categories_in_vendor', [ $this, 'get_translated_category' ] );
 
         // Single store endpoint translation support.
-        add_action( 'dokan_after_saving_settings', [ $this, 'register_vendor_store_url_slug' ], 10, 3 );
-        add_filter( 'dokan_get_store_url', [ $this, 'get_translated_vendor_store_url_slug' ], 10, 2 );
-        add_action( 'dokan_rewrite_rules_loaded', [ $this, 'rewrite_rules_for_translated_store_url' ] );
-        add_action( 'wpml_st_add_string_translation', [ $this, 'handle_store_url_slug_translation_update' ] );
+        add_action( 'init', [ $this, 'register_single_store_default_endpoint' ] );
+        add_action( 'dokan_after_saving_settings', [ $this, 'register_single_store_custom_endpoint' ], 10, 3 );
+        add_filter( 'dokan_get_store_url', [ $this, 'get_translated_single_store_endpoint' ], 10, 2 );
+        add_action( 'dokan_rewrite_rules_loaded', [ $this, 'handle_translated_single_store_endpoint_rewrite' ] );
+        add_action( 'wpml_st_add_string_translation', [ $this, 'handle_single_store_endpoint_translation_update' ] );
 	}
-
-    /**
-     * Register Vendor Store URL Slug.
-     *
-     * @since 1.1.8
-     *
-     * @param string $option_name URL slug.
-     * @param array $option_value URL slug.
-     * @param array $old_options URL slug.
-     *
-     * @return void
-     */
-    public function register_vendor_store_url_slug( string $option_name, array $option_value, array $old_options) {
-        if ( 'dokan_general' !== $option_name || !isset( $old_options['custom_store_url'] ) || $old_options['custom_store_url'] === $option_value['custom_store_url'] ) {
-            return;
-        }
-
-        try {
-            icl_register_string( $this->wp_endpoints, $option_value['custom_store_url'], $option_value['custom_store_url'], false, wpml_get_default_language() );
-        } catch ( Exception $e ) {
-            dokan_log( 'Dokan WPML - Error on registering vendor store URL endpoint: ' . $e->getMessage() );
-        }
-    }
-
-    /**
-     * Get Translated Vendor Store URL Slug.
-     *
-     * @since 1.1.8
-     *
-     * @param string $store_url        Store URL.
-     * @param string $custom_url_slug Store URL slug.
-     *
-     * @return string
-     */
-    public function get_translated_vendor_store_url_slug( $store_url, $custom_url_slug ) {
-        return str_replace(
-            $custom_url_slug,
-            $this->translate_endpoint( $custom_url_slug, null ),
-            $store_url
-        );
-    }
-
-    /**
-     * Rewrite Rules for Translated Store URL.
-     *
-     * @since 1.1.8
-     *
-     * @param string $url_slug URL slug.
-     *
-     * @return void
-     */
-    public function rewrite_rules_for_translated_store_url( string $url_slug ) {
-        global $sitepress;
-
-        if ( ! $sitepress ) {
-            return;
-        }
-
-        $languages = $sitepress->get_active_languages();
-
-        $slug_list = [];
-
-        foreach ( $languages as $code => $language ) {
-            $translated_slug = $this->translate_endpoint( $url_slug, $code );
-
-            if ( $translated_slug === $url_slug ) {
-                continue;
-            }
-
-            $slug_list[] = $translated_slug;
-        }
-
-        foreach ( $slug_list as $translated_slug ) {
-
-            $this->add_rewrite_rules( $translated_slug, $url_slug );
-        }
-
-        flush_rewrite_rules();
-    }
-
-    /**
-     * Add Rewrite Rules.
-     *
-     * @since 1.1.8
-     *
-     * @param string $regex_slug Regex Slug
-     * @param string $query_slug Query Slug
-     * @param string $after      Position after
-     *
-     * @return void
-     */
-    public function add_rewrite_rules( string $regex_slug, string $query_slug, string $after = 'top' ) {
-        add_rewrite_rule( $regex_slug . '/([^/]+)/?$', 'index.php?' . $query_slug . '=$matches[1]', $after );
-        add_rewrite_rule( $regex_slug . '/([^/]+)/page/?([0-9]{1,})/?$', 'index.php?' . $query_slug . '=$matches[1]&paged=$matches[2]', $after );
-
-        add_rewrite_rule( $regex_slug . '/([^/]+)/section/?([0-9]{1,})/?$', 'index.php?' . $query_slug . '=$matches[1]&term=$matches[2]&term_section=true', $after );
-        add_rewrite_rule( $regex_slug . '/([^/]+)/section/?([0-9]{1,})/page/?([0-9]{1,})/?$', 'index.php?' . $query_slug . '=$matches[1]&term=$matches[2]&paged=$matches[3]&term_section=true', $after );
-
-        add_rewrite_rule( $regex_slug . '/([^/]+)/toc?$', 'index.php?' . $query_slug . '=$matches[1]&toc=true', $after );
-        add_rewrite_rule( $regex_slug . '/([^/]+)/toc/page/?([0-9]{1,})/?$', 'index.php?' . $query_slug . '=$matches[1]&paged=$matches[2]&toc=true', $after );
-    }
-
-    /**
-     * Handle Store URL Slug Translation Update.
-     *
-     * @since 1.1.8
-     *
-     * @param int $translated_string_id Translated string ID.
-     *
-     * @return void
-     */
-    public function handle_store_url_slug_translation_update( int $translated_string_id ) {
-        $original_string_id = $this->get_original_string_id( $translated_string_id );
-
-
-        if ( ! $original_string_id ) {
-            return;
-        }
-
-        $original_string_value = $this->get_original_string_value( $original_string_id );
-
-        $this->rewrite_rules_for_translated_store_url( $original_string_value );
-    }
-
-    /**
-     * Get Original String ID Using Translated String ID.
-     *
-     * @since 1.1.8
-     *
-     * @param int $translated_string_id Translated string ID
-     *
-     * @return int|null Original string ID or null if not found
-     */
-    public function get_original_string_id( int $translated_string_id ): ?int {
-        global $wpdb;
-
-        return $wpdb->get_var(
-            $wpdb->prepare(
-                "SELECT string_id
-                     FROM {$wpdb->prefix}icl_string_translations
-                     WHERE id = %d",
-                $translated_string_id
-            )
-        );
-    }
-
-    /**
-     * Get Original String Value by ID.
-     *
-     * @since 1.1.8
-     *
-     * @param int $string_id Original string ID
-     *
-     * @return string|null String value or null if not found
-     */
-    function get_original_string_value( int $string_id ): ?string {
-        global $wpdb;
-
-        return $wpdb->get_var(
-            $wpdb->prepare(
-                "SELECT value
-                    FROM {$wpdb->prefix}icl_strings
-                    WHERE id = %d",
-                $string_id
-            )
-        );
-    }
 
 	/**
 	 * Initialize the plugin tracker
@@ -1488,6 +1322,251 @@ class Dokan_WPML {
      */
     public function get_translated_verification_method_help_text( $help_text ) {
         return $this->get_translated_single_string( $help_text, 'dokan', 'Dokan Vendor Verification Method Help Text: ' . substr( $help_text, 0, 116 ) );
+    }
+
+    /**
+     * Register Default Single Store Default Endpoint.
+     *
+     * @since 1.1.8
+     *
+     * @return void
+     */
+    public function register_single_store_default_endpoint() {
+        if ( $this->is_endpoint_registered_with_wpml( 'dokan-single-store' ) ) {
+            return;
+        }
+
+        try {
+            icl_register_string(
+                $this->wp_endpoints,
+                'dokan-single-store',
+                dokan_get_option( 'custom_store_url', 'dokan_general', 'store' ),
+                false,
+                wpml_get_default_language()
+            );
+        } catch ( Exception $e ) {
+            dokan_log( 'Dokan WPML - Error on registering default vendor store URL endpoint: ' . $e->getMessage() );
+        }
+    }
+
+    /**
+     * Register Single Store Custome Endpoint.
+     *
+     * @since 1.1.8
+     *
+     * @param string $option_name URL slug.
+     * @param array $option_value URL slug.
+     * @param array $old_options URL slug.
+     *
+     * @return void
+     */
+    public function register_single_store_custom_endpoint( string $option_name, array $option_value, array $old_options ) {
+        if ( 'dokan_general' !== $option_name || ! isset( $old_options['custom_store_url'] ) || $old_options['custom_store_url'] === $option_value['custom_store_url'] ) {
+            return;
+        }
+
+        try {
+            icl_register_string(
+                $this->wp_endpoints,
+                'dokan-single-store',
+                $option_value['custom_store_url'],
+                false,
+                wpml_get_default_language()
+            );
+        } catch ( Exception $e ) {
+            dokan_log( 'Dokan WPML - Error on registering vendor store URL endpoint: ' . $e->getMessage() );
+        }
+    }
+
+    /**
+     * Get Translated Single Store Endpoint.
+     *
+     * @since 1.1.8
+     *
+     * @param string $store_url        Store URL.
+     * @param string $custom_url_slug Store URL slug.
+     *
+     * @return string
+     */
+    public function get_translated_single_store_endpoint( $store_url, $custom_url_slug ) {
+        return str_replace(
+            $custom_url_slug,
+            $this->translate_endpoint( $custom_url_slug, null ),
+            $store_url
+        );
+    }
+
+    /**
+     * Handle Translated Single Store Endpoint Rewrite.
+     *
+     * @since 1.1.8
+     *
+     * @param string $url_slug URL slug.
+     *
+     * @return void
+     */
+    public function handle_translated_single_store_endpoint_rewrite( string $url_slug ) {
+        if ( 'dokan-single-store' !== $this->get_original_endpoint_name( $url_slug ) ) {
+            return;
+        }
+
+        global $sitepress;
+
+        if ( ! $sitepress ) {
+            return;
+        }
+
+        $languages = $sitepress->get_active_languages();
+
+        $slug_list = [];
+
+        foreach ( $languages as $code => $language ) {
+            $translated_slug = $this->translate_endpoint( $url_slug, $code );
+
+            if ( $translated_slug === $url_slug ) {
+                continue;
+            }
+
+            $slug_list[] = $translated_slug;
+        }
+
+        foreach ( $slug_list as $translated_slug ) {
+            $this->add_rewrite_rules( $translated_slug, $url_slug );
+        }
+
+        flush_rewrite_rules();
+    }
+
+    /**
+     * Add Rewrite Rules.
+     *
+     * @since 1.1.8
+     *
+     * @param string $regex_slug Regex Slug
+     * @param string $query_slug Query Slug
+     * @param string $after      Position after
+     *
+     * @return void
+     */
+    public function add_rewrite_rules( string $regex_slug, string $query_slug, string $after = 'top' ) {
+        add_rewrite_rule( $regex_slug . '/([^/]+)/?$', 'index.php?' . $query_slug . '=$matches[1]', $after );
+        add_rewrite_rule( $regex_slug . '/([^/]+)/page/?([0-9]{1,})/?$', 'index.php?' . $query_slug . '=$matches[1]&paged=$matches[2]', $after );
+
+        add_rewrite_rule( $regex_slug . '/([^/]+)/section/?([0-9]{1,})/?$', 'index.php?' . $query_slug . '=$matches[1]&term=$matches[2]&term_section=true', $after );
+        add_rewrite_rule( $regex_slug . '/([^/]+)/section/?([0-9]{1,})/page/?([0-9]{1,})/?$', 'index.php?' . $query_slug . '=$matches[1]&term=$matches[2]&paged=$matches[3]&term_section=true', $after );
+
+        add_rewrite_rule( $regex_slug . '/([^/]+)/toc?$', 'index.php?' . $query_slug . '=$matches[1]&toc=true', $after );
+        add_rewrite_rule( $regex_slug . '/([^/]+)/toc/page/?([0-9]{1,})/?$', 'index.php?' . $query_slug . '=$matches[1]&paged=$matches[2]&toc=true', $after );
+    }
+
+    /**
+     * Handle Single Store Endpoint Translation Update.
+     *
+     * @since 1.1.8
+     *
+     * @param int $translated_string_id Translated string ID.
+     *
+     * @return void
+     */
+    public function handle_single_store_endpoint_translation_update( int $translated_string_id ) {
+        $original_string_id = $this->get_original_string_id( $translated_string_id );
+
+
+        if ( ! $original_string_id ) {
+            return;
+        }
+
+        $original_string_value = $this->get_original_string_value( $original_string_id );
+
+        $this->handle_translated_single_store_endpoint_rewrite( $original_string_value );
+    }
+
+    /**
+     * Get Original String ID Using Translated String ID.
+     *
+     * @since 1.1.8
+     *
+     * @param int $translated_string_id Translated string ID
+     *
+     * @return int|null Original string ID or null if not found
+     */
+    public function get_original_string_id( int $translated_string_id ): ?int {
+        global $wpdb;
+
+        return $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT string_id
+                     FROM {$wpdb->prefix}icl_string_translations
+                     WHERE id = %d",
+                $translated_string_id
+            )
+        );
+    }
+
+    /**
+     * Get Original String Value by ID.
+     *
+     * @since 1.1.8
+     *
+     * @param int $string_id Original string ID
+     *
+     * @return string|null String value or null if not found
+     */
+    public function get_original_string_value( int $string_id ): ?string {
+        global $wpdb;
+
+        return $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT value
+                    FROM {$wpdb->prefix}icl_strings
+                    WHERE id = %d",
+                $string_id
+            )
+        );
+    }
+
+    /**
+     * Get Original String Name by Value.
+     *
+     * @since 1.1.8
+     *
+     * @param string $string_value Original string value
+     *
+     * @return string|null String name or null if not found
+     */
+    public function get_original_endpoint_name( string $string_value ): ?string {
+        global $wpdb;
+
+        return $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT name
+                    FROM {$wpdb->prefix}icl_strings
+                    WHERE value = %s AND context = %s",
+                $string_value,
+                $this->wp_endpoints
+            )
+        );
+    }
+
+    /**
+     * Check if an endpoint is registered for translation in WPML.
+     *
+     * @since 1.1.8
+     *
+     * @param string $endpoint_name Endpoint name to check
+     *
+     * @return bool Whether the endpoint is registered for translation
+     */
+    public function is_endpoint_registered_with_wpml( string $endpoint_name ): bool {
+        global $wpdb;
+
+        $query = $wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}icl_strings
+                WHERE name = %s",
+            $endpoint_name
+        );
+
+        return $wpdb->get_var($query) > 0;
     }
 } // Dokan_WPML
 
