@@ -1471,12 +1471,15 @@ class Dokan_WPML {
     public function handle_single_store_endpoint_translation_update( int $translated_string_id ) {
         $original_string_id = $this->get_original_string_id( $translated_string_id );
 
-
         if ( ! $original_string_id ) {
             return;
         }
 
         $original_string_value = $this->get_original_string_value( $original_string_id );
+
+        if ( ! $original_string_value ) {
+            return;
+        }
 
         $this->handle_translated_single_store_endpoint_rewrite( $original_string_value );
     }
