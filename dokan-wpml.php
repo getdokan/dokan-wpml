@@ -171,9 +171,8 @@ class Dokan_WPML {
         add_filter( 'dokan_get_store_categories_in_vendor', [ $this, 'get_translated_category' ] );
 
         // Single store endpoint translation support.
-        add_action( 'init', [ $this, 'register_single_store_default_endpoint' ] );
+        add_filter( 'dokan_wpml_settings_query_var_map', [ $this, 'register_single_store_initial_endpoint' ] );
         add_action( 'dokan_after_saving_settings', [ $this, 'register_single_store_custom_endpoint' ], 10, 3 );
-        add_filter( 'dokan_get_store_url', [ $this, 'get_translated_single_store_endpoint' ], 10, 2 );
         add_action( 'dokan_rewrite_rules_loaded', [ $this, 'handle_translated_single_store_endpoint_rewrite' ] );
         add_action( 'wpml_st_add_string_translation', [ $this, 'handle_single_store_endpoint_translation_update' ] );
 	}
@@ -1325,28 +1324,24 @@ class Dokan_WPML {
     }
 
     /**
-     * Register Default Single Store Default Endpoint.
+     * Register Single Store Initial Endpoint
      *
      * @since 1.1.8
      *
-     * @return void
+     * @param array $query_vars Query Vars
+     *
+     * @return array
      */
-    public function register_single_store_default_endpoint() {
-        if ( $this->is_endpoint_registered_with_wpml( 'dokan-single-store' ) ) {
-            return;
+    public function register_single_store_initial_endpoint( array $query_vars ): array {
+        $store_url = dokan_get_option( 'custom_store_url', 'dokan_general', 'store' );
+
+        if ( in_array( $store_url, $query_vars ) ) {
+            return $query_vars;
         }
 
-        try {
-            icl_register_string(
-                $this->wp_endpoints,
-                'dokan-single-store',
-                dokan_get_option( 'custom_store_url', 'dokan_general', 'store' ),
-                false,
-                wpml_get_default_language()
-            );
-        } catch ( Exception $e ) {
-            dokan_log( 'Dokan WPML - Error on registering default vendor store URL endpoint: ' . $e->getMessage() );
-        }
+        $query_vars[] = $store_url;
+
+        return $query_vars;
     }
 
     /**
@@ -1368,7 +1363,7 @@ class Dokan_WPML {
         try {
             icl_register_string(
                 $this->wp_endpoints,
-                'dokan-single-store',
+                $option_value['custom_store_url'],
                 $option_value['custom_store_url'],
                 false,
                 wpml_get_default_language()
@@ -1376,24 +1371,6 @@ class Dokan_WPML {
         } catch ( Exception $e ) {
             dokan_log( 'Dokan WPML - Error on registering vendor store URL endpoint: ' . $e->getMessage() );
         }
-    }
-
-    /**
-     * Get Translated Single Store Endpoint.
-     *
-     * @since 1.1.8
-     *
-     * @param string $store_url        Store URL.
-     * @param string $custom_url_slug Store URL slug.
-     *
-     * @return string
-     */
-    public function get_translated_single_store_endpoint( $store_url, $custom_url_slug ) {
-        return str_replace(
-            $custom_url_slug,
-            $this->translate_endpoint( $custom_url_slug, null ),
-            $store_url
-        );
     }
 
     /**
@@ -1406,10 +1383,6 @@ class Dokan_WPML {
      * @return void
      */
     public function handle_translated_single_store_endpoint_rewrite( string $url_slug ) {
-        if ( 'dokan-single-store' !== $this->get_original_endpoint_name( $url_slug ) ) {
-            return;
-        }
-
         global $sitepress;
 
         if ( ! $sitepress ) {
@@ -1428,6 +1401,10 @@ class Dokan_WPML {
             }
 
             $slug_list[] = $translated_slug;
+        }
+
+        if ( empty( $slug_list ) ) {
+            return;
         }
 
         foreach ( $slug_list as $translated_slug ) {
@@ -1526,50 +1503,6 @@ class Dokan_WPML {
                 $string_id
             )
         );
-    }
-
-    /**
-     * Get Original String Name by Value.
-     *
-     * @since 1.1.8
-     *
-     * @param string $string_value Original string value
-     *
-     * @return string|null String name or null if not found
-     */
-    public function get_original_endpoint_name( string $string_value ): ?string {
-        global $wpdb;
-
-        return $wpdb->get_var(
-            $wpdb->prepare(
-                "SELECT name
-                    FROM {$wpdb->prefix}icl_strings
-                    WHERE value = %s AND context = %s",
-                $string_value,
-                $this->wp_endpoints
-            )
-        );
-    }
-
-    /**
-     * Check if an endpoint is registered for translation in WPML.
-     *
-     * @since 1.1.8
-     *
-     * @param string $endpoint_name Endpoint name to check
-     *
-     * @return bool Whether the endpoint is registered for translation
-     */
-    public function is_endpoint_registered_with_wpml( string $endpoint_name ): bool {
-        global $wpdb;
-
-        $query = $wpdb->prepare(
-            "SELECT COUNT(*) FROM {$wpdb->prefix}icl_strings
-                WHERE name = %s",
-            $endpoint_name
-        );
-
-        return $wpdb->get_var($query) > 0;
     }
 } // Dokan_WPML
 
