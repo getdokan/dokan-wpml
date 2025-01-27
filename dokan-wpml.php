@@ -923,9 +923,9 @@ class Dokan_WPML {
 
             $translated_store_endpoint = $this->translate_endpoint( $store_endpoint, $code );
 
-            add_rewrite_rule( $store_endpoint . '/([^/]+)/([^/]+)?$', 'index.php?' . $store_endpoint . '=$matches[1]&store_single_custom_param=$matches[2]', 'top' );
             add_rewrite_rule( $translated_store_endpoint . '/([^/]+)/([^/]+)?$', 'index.php?' . $store_endpoint . '=$matches[1]&store_single_custom_param=$matches[2]', 'top' );
         }
+        add_rewrite_rule( $store_endpoint . '/([^/]+)/([^/]+)?$', 'index.php?' . $store_endpoint . '=$matches[1]&store_single_custom_param=$matches[2]', 'top' );
     }
 
     /**
