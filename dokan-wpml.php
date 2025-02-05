@@ -945,6 +945,8 @@ class Dokan_WPML {
             return $url;
         }
 
+        $tab = untrailingslashit( trim( $tab, " \n\r\t\v\0/\\" ) );
+
         $translated_store_slug = $this->translate_endpoint( $custom_store_slug );
         $translated_tab        = empty($tab) ? $tab: $this->translate_endpoint( $tab );
         $base_url              = home_url();
