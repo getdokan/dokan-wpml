@@ -169,6 +169,11 @@ class Dokan_WPML {
         add_filter( 'wp', [ $this, 'set_translated_query_var_to_default_query_var' ], 11 );
         add_filter( 'dokan_set_store_categories', [ $this, 'set_translated_category' ] );
         add_filter( 'dokan_get_store_categories_in_vendor', [ $this, 'get_translated_category' ] );
+
+        // shipping methods
+        add_action( 'dokan_shipping_method_title_update', [ $this, 'register_shipping_method_title' ] , 10, 3 );
+
+        add_filter( 'dokan_shipping_method_translatable_title', [ $this, 'get_translated_shipping_method_title' ], 10, 2 );
 	}
 
 	/**
@@ -1291,6 +1296,35 @@ class Dokan_WPML {
         $this->register_single_string( 'dokan', 'Dokan Vendor Verification Method Help Text: ' . $method->get_help_text(), $method->get_help_text() );
     }
 
+    /**
+     * Register shipping method title for string translation.
+     *
+     * @since 1.1.6
+     *
+     * @param string $title Shipping Method Title.
+     * @param int $instance_id Shipping Method Instance ID.
+     *
+     * @return void
+     */
+
+    public function register_shipping_method_title( $title,$instance_id ){
+        $this->register_single_string( 'dokan', 'Dokan Shipping Method Title: ' . $instance_id, $title );
+    }
+
+    /**
+     * Get translated shipping method title.
+     *
+     * @since 1.1.6
+     *
+     * @param string $title Shipping Method Title.
+     * @param int $instance_id Shipping Method Instance ID.
+     *
+     * @return string
+     */
+
+    public function get_translated_shipping_method_title ( $title,$instance_id ): string {
+        return $this->get_translated_single_string( $title, 'dokan', 'Dokan Shipping Method Title: ' . $instance_id );
+    }
     /**
      * Get translated Verification Method Title.
      *
