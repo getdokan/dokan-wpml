@@ -159,8 +159,8 @@ class Dokan_WPML {
         add_filter( 'dokan_pro_abuse_report_reason', [ $this, 'get_translated_abuse_report_reason' ] );
         add_filter( 'dokan_pro_subscription_allowed_categories', [ $this, 'get_translated_allowed_categories' ] );
         add_filter( 'dokan_pro_rma_reason', [ $this, 'get_translated_rma_reason' ] );
-        add_action( 'dokan_pro_vendor_verification_method_created', [ $this, 'register_vendor_verification_method'] );
-        add_action( 'dokan_pro_vendor_verification_method_updated', [ $this, 'register_vendor_verification_method'] );
+        add_action( 'dokan_pro_vendor_verification_method_created', [ $this, 'register_vendor_verification_method' ] );
+        add_action( 'dokan_pro_vendor_verification_method_updated', [ $this, 'register_vendor_verification_method' ] );
         add_filter( 'dokan_pro_vendor_verification_method_title', [ $this, 'get_translated_verification_method_title' ] );
         add_filter( 'dokan_pro_vendor_verification_method_help_text', [ $this, 'get_translated_verification_method_help_text' ] );
 
@@ -172,6 +172,13 @@ class Dokan_WPML {
         add_filter( 'wp', [ $this, 'set_custom_store_query_var' ], 11 );
         add_filter( 'dokan_set_store_categories', [ $this, 'set_translated_category' ] );
         add_filter( 'dokan_get_store_categories_in_vendor', [ $this, 'get_translated_category' ] );
+
+        add_action( 'dokan_vendor_vacation_message_updated', [ $this, 'dokan_vendor_vacation_message_updated' ], 10, 3 );
+        add_action( 'dokan_vendor_vacation_message_schedule_updated', [ $this, 'dokan_vendor_vacation_message_updated' ], 10, 3 );
+        add_filter( 'dokan_get_vendor_vacation_message', [ $this, 'get_translated_dokan_vendor_vacation_message' ], 10, 2 );
+
+        add_action( 'dokan_vendor_biography_after_update', [ $this, 'dokan_vendor_biography_updated' ], 10, 3 );
+        add_filter( 'dokan_get_vendor_biography_text', [ $this, 'get_translated_dokan_vendor_biography_text' ], 10, 2 );
 	}
 
 	/**
@@ -1418,6 +1425,64 @@ class Dokan_WPML {
     public function get_translated_verification_method_help_text( $help_text ) {
         return $this->get_translated_single_string( $help_text, 'dokan', 'Dokan Vendor Verification Method Help Text: ' . substr( $help_text, 0, 116 ) );
     }
+
+    /**
+     * Translate Vendor Vacation Message
+     *
+     * @param $text
+     * @param $name
+     *
+     * @return void
+     */
+    public function dokan_vendor_vacation_message_updated($text, $name) {
+        $this->register_single_string(
+            'dokan',
+            'Vendor Vacation Message: ' . $name,
+            $text
+        );
+    }
+
+    /**
+     * Translated Vendor Vacation Message
+     *
+     * @param string $text
+     * @param $name
+     *
+     * @return string
+     */
+    public function get_translated_dokan_vendor_vacation_message(string $text , $name) {
+        return $this->get_translated_single_string( $text, 'dokan', 'Vendor Vacation Message: '.$name );
+    }
+
+
+    /**
+     * Translate Vendor Biography Text
+     *
+     * @param $store_info array
+     * @param $name string
+     *
+     * @return void
+     */
+    public function dokan_vendor_biography_updated($store_info, $name) {
+        $this->register_single_string(
+            'dokan',
+            'Vendor Biography Text: ' . $name,
+            $store_info['vendor_biography']
+        );
+    }
+
+    /**
+     * Translated Vendor Biography Text
+     *
+     * @param string $text
+     * @param $name
+     *
+     * @return string
+     */
+    public function get_translated_dokan_vendor_biography_text(string $text , $name) {
+        return $this->get_translated_single_string( $text, 'dokan', 'Vendor Biography Text: '.$name );
+    }
+
 } // Dokan_WPML
 
 function dokan_load_wpml() { // phpcs:ignore
