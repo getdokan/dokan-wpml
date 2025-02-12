@@ -1,3 +1,31 @@
+v1.1.8 -> Feb 11, 2025
+---------------------------
+- **fix:** Added translation support for vendor verification and biography messages
+- **update:** Added translation for vendor store URL additional endpoint
+
+v1.1.7 -> Nov 11, 2024
+---------------------------
+- **fix:** Widget and verification page help text translate issue fixed
+- **update:** Add Dokan URL translation pause & resume functionalities.
+- **update:** Add Printful url translation with settings query vars map.
+
+v1.1.6 -> Aug 28, 2024
+---------------------------
+- **update:** Vendor Verification Method Translation Support added.
+
+v1.1.5 -> Jul 10, 2024
+---------------------------
+- **new:**  Added string translation configuration for dokan dashboard menu manager.
+
+v1.1.3 -> Jun 13, 2024
+---------------------------
+- **update:** Dokan Product meta-key set to copy in WPML
+- **fix:** Store category counts sync for multiple language
+
+v1.1.2 -> Apr 01, 2024
+---------------------------
+- **update:** Vendor Subscription remaining product count WPML Support
+
 v1.1.1 -> Mar 13, 2024
 ---------------------------
 - **update:** Vendor Dashboard Settings submenu translation Support added
