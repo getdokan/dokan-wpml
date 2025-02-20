@@ -1,15 +1,15 @@
-# Copyright (C) 2024 weDevs
+# Copyright (C) 2025 weDevs
 # This file is distributed under the GPL2.
 msgid ""
 msgstr ""
-"Project-Id-Version: Dokan - WPML Integration 1.1.7\n"
+"Project-Id-Version: Dokan - WPML Integration 1.1.8\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/dokan-wpml\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2024-11-11T10:53:22+00:00\n"
+"POT-Creation-Date: 2025-02-11T09:26:03+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.11.0\n"
 "X-Domain: dokan-wpml\n"
@@ -36,11 +36,11 @@ msgid "weDevs"
 msgstr ""
 
 #. translators: %1$s: opening anchor tag, %2$s: closing anchor tag
-#: dokan-wpml.php:216
+#: dokan-wpml.php:226
 msgid "<b>Dokan - WPML Integration</b> requires %1$s Dokan plugin %2$s to be installed & activated!"
 msgstr ""
 
 #. translators: %1$s: opening anchor tag, %2$s: closing anchor tag
-#: dokan-wpml.php:222
+#: dokan-wpml.php:232
 msgid "<b>Dokan - WPML Integration</b> requires %1$s WPML Multilingual CMS %2$s to be installed & activated!"
 msgstr ""
