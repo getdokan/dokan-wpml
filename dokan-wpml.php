@@ -125,6 +125,7 @@ class Dokan_WPML {
 		add_filter( 'dokan_get_terms_condition_url', [ $this, 'get_terms_condition_url' ], 10, 2 );
 		add_filter( 'dokan_redirect_login', [ $this, 'redirect_if_not_login' ], 90 );
 		add_filter( 'dokan_force_page_redirect', [ $this, 'force_redirect_page' ], 90, 2 );
+        add_action( 'init', [ $this, 'handle_flushing_rewrite_rules' ] );
 
 		// Load all filters hook
         add_filter('sanitize_user_meta_product_package_id', [ $this, 'set_subscription_pack_id_in_base_language' ], 10, 3 );
@@ -181,7 +182,6 @@ class Dokan_WPML {
         add_filter( 'dokan_get_vendor_biography_text', [ $this, 'get_translated_dokan_vendor_biography_text' ], 10, 2 );
 
         // Single store endpoint translation support.
-        add_filter( 'dokan_wpml_settings_query_var_map', [ $this, 'register_single_store_initial_endpoint' ] );
         add_action( 'dokan_after_saving_settings', [ $this, 'register_single_store_custom_endpoint' ], 10, 3 );
         add_action( 'dokan_rewrite_rules_loaded', [ $this, 'handle_translated_single_store_endpoint_rewrite' ] );
         add_action( 'wpml_st_add_string_translation', [ $this, 'handle_single_store_endpoint_translation_update' ] );
@@ -403,6 +403,22 @@ class Dokan_WPML {
     }
 
     /**
+     * Handle Flushing Rewrite Rules.
+     *
+     * @since 1.1.9
+     *
+     * @return void
+     */
+    public function handle_flushing_rewrite_rules() {
+        if ( ! get_transient( 'dokan_wpml_flush_rewrite_rules_needed' ) ) {
+            return;
+        }
+
+        flush_rewrite_rules();
+        delete_transient( 'dokan_wpml_flush_rewrite_rules_needed' );
+    }
+
+    /**
      * Filter dokan navigation url for specific language
      *
      * @since 1.0.0
@@ -559,8 +575,13 @@ class Dokan_WPML {
             'toc',
             'biography',
             'reviews',
-
         ];
+
+        $store_url = dokan_get_option( 'custom_store_url', 'dokan_general', 'store' );
+
+        if ( ! in_array( $store_url, $query_vars ) ) {
+            $query_vars[] = $store_url;
+        }
 
         $query_vars = apply_filters( 'dokan_wpml_settings_query_var_map', $query_vars );
 
@@ -1490,30 +1511,9 @@ class Dokan_WPML {
     }
 
     /**
-     * Register Single Store Initial Endpoint
-     *
-     * @since 1.1.8
-     *
-     * @param array $query_vars Query Vars
-     *
-     * @return array
-     */
-    public function register_single_store_initial_endpoint( array $query_vars ): array {
-        $store_url = dokan_get_option( 'custom_store_url', 'dokan_general', 'store' );
-
-        if ( in_array( $store_url, $query_vars ) ) {
-            return $query_vars;
-        }
-
-        $query_vars[] = $store_url;
-
-        return $query_vars;
-    }
-
-    /**
      * Register Single Store Custome Endpoint.
      *
-     * @since 1.1.8
+     * @since 1.1.9
      *
      * @param string $option_name URL slug.
      * @param array $option_value URL slug.
@@ -1542,7 +1542,7 @@ class Dokan_WPML {
     /**
      * Handle Translated Single Store Endpoint Rewrite.
      *
-     * @since 1.1.8
+     * @since 1.1.9
      *
      * @param string $url_slug URL slug.
      *
@@ -1576,14 +1576,12 @@ class Dokan_WPML {
         foreach ( $slug_list as $translated_slug ) {
             $this->add_rewrite_rules( $translated_slug, $url_slug );
         }
-
-        flush_rewrite_rules();
     }
 
     /**
      * Add Rewrite Rules.
      *
-     * @since 1.1.8
+     * @since 1.1.9
      *
      * @param string $regex_slug Regex Slug
      * @param string $query_slug Query Slug
@@ -1605,68 +1603,46 @@ class Dokan_WPML {
     /**
      * Handle Single Store Endpoint Translation Update.
      *
-     * @since 1.1.8
+     * @since 1.1.9
      *
      * @param int $translated_string_id Translated string ID.
      *
      * @return void
      */
     public function handle_single_store_endpoint_translation_update( int $translated_string_id ) {
-        $original_string_id = $this->get_original_string_id( $translated_string_id );
+        $custom_store_url = dokan_get_option( 'custom_store_url', 'dokan_general', 'store' );
 
-        if ( ! $original_string_id ) {
+        // Check if translation updated for the custom store URL.
+        if ( $custom_store_url !== $this->get_original_string_using_translated_string_id( $translated_string_id ) ) {
             return;
         }
 
-        $original_string_value = $this->get_original_string_value( $original_string_id );
-
-        if ( ! $original_string_value ) {
-            return;
-        }
-
-        $this->handle_translated_single_store_endpoint_rewrite( $original_string_value );
+        // Set transient to flush rewrite rules on next request.
+        set_transient( 'dokan_wpml_flush_rewrite_rules_needed', 1 );
     }
 
     /**
-     * Get Original String ID Using Translated String ID.
+     * Get Original String by Translated String ID.
      *
-     * @since 1.1.8
+     * @since 1.1.9
      *
-     * @param int $translated_string_id Translated string ID
+     * @param string $translated_string_id Translated String ID
      *
-     * @return int|null Original string ID or null if not found
+     * @return string|null Orininal string or null if not found
      */
-    public function get_original_string_id( int $translated_string_id ): ?int {
+    public function get_original_string_using_translated_string_id( string $translated_string_id ): ?string {
         global $wpdb;
 
         return $wpdb->get_var(
             $wpdb->prepare(
-                "SELECT string_id
-                     FROM {$wpdb->prefix}icl_string_translations
-                     WHERE id = %d",
+                "SELECT
+                        s.name
+                    FROM
+                        {$wpdb->prefix}icl_strings AS s
+                        INNER JOIN {$wpdb->prefix}icl_string_translations AS st
+                    WHERE
+                        s.id = st.string_id AND st.id = %d",
                 $translated_string_id
-            )
-        );
-    }
-
-    /**
-     * Get Original String Value by ID.
-     *
-     * @since 1.1.8
-     *
-     * @param int $string_id Original string ID
-     *
-     * @return string|null String value or null if not found
-     */
-    public function get_original_string_value( int $string_id ): ?string {
-        global $wpdb;
-
-        return $wpdb->get_var(
-            $wpdb->prepare(
-                "SELECT value
-                    FROM {$wpdb->prefix}icl_strings
-                    WHERE id = %d",
-                $string_id
             )
         );
     }
