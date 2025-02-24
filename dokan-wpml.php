@@ -1416,7 +1416,7 @@ class Dokan_WPML {
      * @return void
      */
 
-    public function register_shipping_method_title( $title,$instance_id ){
+    public function register_shipping_method_title( string $title, int $instance_id ){
         $this->register_single_string( 'dokan', 'Dokan Shipping Method Title: ' . $instance_id, $title );
     }
 
@@ -1431,7 +1431,7 @@ class Dokan_WPML {
      * @return string
      */
 
-    public function get_translated_shipping_method_title ( $title,$instance_id ): string {
+    public function get_translated_shipping_method_title ( string $title, int $instance_id ): string {
         return $this->get_translated_single_string( $title, 'dokan', 'Dokan Shipping Method Title: ' . $instance_id );
     }
     /**
