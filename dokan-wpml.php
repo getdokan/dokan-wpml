@@ -179,6 +179,8 @@ class Dokan_WPML {
 
         add_action( 'dokan_vendor_biography_after_update', [ $this, 'dokan_vendor_biography_updated' ], 10, 3 );
         add_filter( 'dokan_get_vendor_biography_text', [ $this, 'get_translated_dokan_vendor_biography_text' ], 10, 2 );
+
+        add_filter( 'wpml_ls_language_url', [ $this, 'filter_language_switcher_url' ], 10, 2 );
 	}
 
 	/**
@@ -516,7 +518,7 @@ class Dokan_WPML {
      *
      * @return array
      */
-    public function get_translated_query_vars_map(): array {
+    public function get_translated_query_vars_map( $lang = null ): array {
         $query_vars     = [
             'store',
             'payment',
@@ -553,7 +555,8 @@ class Dokan_WPML {
             'toc',
             'biography',
             'reviews',
-
+            'settings',
+            'dashboard',
         ];
 
         $query_vars = apply_filters( 'dokan_wpml_settings_query_var_map', $query_vars );
@@ -569,7 +572,7 @@ class Dokan_WPML {
                 }
             }
 
-            $query_vars_map[ $query_var ] = $this->translate_endpoint( $query_var );
+            $query_vars_map[ $query_var ] = $this->translate_endpoint( $query_var, $lang );
         }
 
         return $query_vars_map;
@@ -891,8 +894,9 @@ class Dokan_WPML {
 		$store_user       = get_user_by( 'slug', $store_slug );
 		$store_url        = dokan_get_store_url( $store_user->ID );
 
-		add_filter( 'wpml_ls_language_url', function( $url, $data ) use ( $store_url ) {
-		    return apply_filters( 'wpml_permalink', $store_url, $data['code'] );
+		add_filter( 'wpml_ls_language_url', function( $url, $lang ) use ( $store_url, $store_user ) {
+
+		    return apply_filters( 'wpml_permalink', $store_url, $lang['code'] );
 	    }, 10, 2 );
     }
 
@@ -940,10 +944,10 @@ class Dokan_WPML {
      *
      * @since 1.1.8
      *
-     * @param  string  $url URL.
+     * @param  string  $url               URL.
      * @param  string  $custom_store_slug Store slug.
-     * @param  int     $store_user_id Store user ID.
-     * @param  string  $tab Tab or custom endpoint..
+     * @param  int     $store_user_id     Store user ID.
+     * @param  string  $tab               Tab or custom endpoint.
      *
      * @return string
      */
@@ -1328,8 +1332,8 @@ class Dokan_WPML {
      *
      * @return string
      */
-    public function get_default_query_var( $query_var ) {
-        $query_var_map = $this->get_translated_query_vars_map();
+    public function get_default_query_var( $query_var, $lang = null ) {
+        $query_var_map = $this->get_translated_query_vars_map( $lang );
 
         $default_query_var = array_search( $query_var, $query_var_map, true );
 
@@ -1481,6 +1485,87 @@ class Dokan_WPML {
      */
     public function get_translated_dokan_vendor_biography_text(string $text , $name) {
         return $this->get_translated_single_string( $text, 'dokan', 'Vendor Biography Text: '.$name );
+    }
+
+    /**
+     * Filter language switcher URLs for Dokan store and dashboard pages
+     *
+     * @since 1.1.9
+     *
+     * @param string $url  The language URL
+     * @param array  $lang Language data array
+     *
+     * @return string
+     */
+    public function filter_language_switcher_url( $url, $lang ) {
+        // Get home URL without WPML modifications.
+        $this->disable_url_translation();
+        $home_url = home_url();
+        $this->enable_url_translation();
+
+        $base_url = trailingslashit(
+            wpml_get_default_language() === $lang['code']
+                ? $home_url
+                : trailingslashit( $home_url ) . $lang['code']
+        );
+
+        $url_path = trim( str_replace( $base_url, '', $url ), '/' );
+        if ( empty( $url_path ) ) {
+            return $url;
+        }
+
+        $path_segments = explode( '/', $url_path );
+        $base_slug     = urldecode_deep( $path_segments[0] );
+
+        // Get store and dashboard slugs.
+        $store_slug                = dokan_get_option( 'custom_store_url', 'dokan_general', 'store' );
+        $dashboard_page_id         = $this->get_raw_option( 'dashboard', 'dokan_pages' );
+        $dashboard_translated_id   = wpml_object_id_filter( $dashboard_page_id, 'page', true, $lang['code'] );
+        $dashboard_translated_slug = urldecode_deep( get_post_field( 'post_name', $dashboard_translated_id ) );
+
+        // Check if the URL is a store URL or a dashboard URL.
+        $is_store_url     = $base_slug === $this->get_default_query_var( $store_slug );
+        $is_dashboard_url = $base_slug === $dashboard_translated_slug;
+
+        if ( ! $is_store_url && ! $is_dashboard_url ) {
+            return $url;
+        }
+
+        if ( $is_store_url ) {
+            $path_segments[0] = $this->translate_endpoint( $store_slug, $lang['code'] );
+        }
+
+        if ( $is_dashboard_url ) {
+            $path_segments[0] = $dashboard_translated_slug;
+        }
+
+        // Translate additional path segments.
+        $path_segments = $this->translate_path_segments( $path_segments, $lang['code'] );
+
+        return trailingslashit( $base_url ) . trailingslashit( implode( '/', $path_segments ) );
+    }
+
+    /**
+     * Translate path segments in URL.
+     *
+     * @since 1.1.9
+     *
+     * @param array  $path_segments Path segments to translate
+     * @param string $lang_code     Target language code
+     *
+     * @return array Translated path segments
+     */
+    protected function translate_path_segments( $path_segments, $lang_code ) {
+        $segment_count = min( count( $path_segments ), 3 );
+
+        for ( $i = 1; $i < $segment_count; $i++ ) {
+            if ( ! empty( $path_segments[ $i ] ) ) {
+                $default_var         = $this->get_default_query_var( urldecode_deep( $path_segments[ $i ] ) );
+                $path_segments[ $i ] = $this->translate_endpoint( $default_var, $lang_code );
+            }
+        }
+
+        return $path_segments;
     }
 
 } // Dokan_WPML
