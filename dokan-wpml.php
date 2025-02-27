@@ -896,8 +896,8 @@ class Dokan_WPML {
 		$store_user       = get_user_by( 'slug', $store_slug );
 		$store_url        = dokan_get_store_url( $store_user->ID );
 
-		add_filter( 'wpml_ls_language_url', function( $url, $lang ) use ( $store_url, $store_user ) {
-		    return apply_filters( 'wpml_permalink', $store_url, $lang['code'] );
+		add_filter( 'wpml_ls_language_url', function( $url, $data ) use ( $store_url ) {
+		    return apply_filters( 'wpml_permalink', $store_url, $data['code'] );
 	    }, 10, 2 );
     }
 
