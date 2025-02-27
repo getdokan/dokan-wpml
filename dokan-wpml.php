@@ -1515,13 +1515,14 @@ class Dokan_WPML {
         }
 
         // Translate path segments to the target language.
-        $path_segments = explode( '/', $url_path );
-        $path_segments = $this->translate_path_segments( $path_segments, $lang['code'] );
+        $path_segments       = explode( '/', $url_path );
+        $translated_segments = $this->translate_path_segments( $path_segments, $lang['code'] );
 
         return apply_filters(
             'dokan_wpml_get_language_switcher_url',
-            trailingslashit( $base_url ) . trailingslashit( implode( '/', $path_segments ) ),
+            trailingslashit( $base_url ) . trailingslashit( implode( '/', $translated_segments ) ),
             $path_segments,
+            $translated_segments,
             $lang,
             $base_url
         );
