@@ -1520,7 +1520,10 @@ class Dokan_WPML {
 
         return apply_filters(
             'dokan_wpml_get_language_switcher_url',
-            trailingslashit( $base_url ) . trailingslashit( implode( '/', $path_segments ) )
+            trailingslashit( $base_url ) . trailingslashit( implode( '/', $path_segments ) ),
+            $path_segments,
+            $lang,
+            $base_url
         );
     }
 
@@ -1535,7 +1538,7 @@ class Dokan_WPML {
      * @return array Translated path segments
      */
     protected function translate_path_segments( $path_segments, $lang_code ) {
-        foreach( $path_segments as $key => $segment ) {
+        foreach ( $path_segments as $key => $segment ) {
             $path_segments[ $key ] = $this->translate_endpoint( urldecode_deep( $segment ), $lang_code );
         }
 
