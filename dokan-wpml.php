@@ -1514,35 +1514,14 @@ class Dokan_WPML {
             return $url;
         }
 
-        $path_segments = explode( '/', $url_path );
-        $base_slug     = urldecode_deep( $path_segments[0] );
-
-        // Get store and dashboard slugs.
-        $store_slug                = dokan_get_option( 'custom_store_url', 'dokan_general', 'store' );
-        $dashboard_page_id         = $this->get_raw_option( 'dashboard', 'dokan_pages' );
-        $dashboard_translated_id   = wpml_object_id_filter( $dashboard_page_id, 'page', true, $lang['code'] );
-        $dashboard_translated_slug = urldecode_deep( get_post_field( 'post_name', $dashboard_translated_id ) );
-
-        // Check if the URL is a store URL or a dashboard URL.
-        $is_store_url     = $base_slug === $this->get_default_query_var( $store_slug );
-        $is_dashboard_url = $base_slug === $dashboard_translated_slug;
-
-        if ( ! $is_store_url && ! $is_dashboard_url ) {
-            return $url;
-        }
-
-        if ( $is_store_url ) {
-            $path_segments[0] = $this->translate_endpoint( $store_slug, $lang['code'] );
-        }
-
-        if ( $is_dashboard_url ) {
-            $path_segments[0] = $dashboard_translated_slug;
-        }
-
         // Translate path segments to the target language.
+        $path_segments = explode( '/', $url_path );
         $path_segments = $this->translate_path_segments( $path_segments, $lang['code'] );
 
-        return trailingslashit( $base_url ) . trailingslashit( implode( '/', $path_segments ) );
+        return apply_filters(
+            'dokan_wpml_get_language_switcher_url',
+            trailingslashit( $base_url ) . trailingslashit( implode( '/', $path_segments ) )
+        );
     }
 
     /**
@@ -1556,10 +1535,8 @@ class Dokan_WPML {
      * @return array Translated path segments
      */
     protected function translate_path_segments( $path_segments, $lang_code ) {
-        $segment_count = count( $path_segments );
-
-        for ( $i = 1; $i < $segment_count; $i++ ) {
-            $path_segments[ $i ] = $this->translate_endpoint( urldecode_deep( $path_segments[ $i ] ), $lang_code );
+        foreach( $path_segments as $key => $segment ) {
+            $path_segments[ $key ] = $this->translate_endpoint( urldecode_deep( $segment ), $lang_code );
         }
 
         return $path_segments;
