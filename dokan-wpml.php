@@ -181,7 +181,7 @@ class Dokan_WPML {
         add_filter( 'dokan_get_vendor_biography_text', [ $this, 'get_translated_dokan_vendor_biography_text' ], 10, 2 );
 
         // Add URL translation support for language switcher.
-        add_filter( 'wpml_ls_language_url', [ $this, 'filter_language_switcher_url' ], 10, 2 );
+        add_filter( 'wpml_ls_language_url', [ $this, 'filter_language_switcher_url' ], 99, 2 );
 	}
 
 	/**
