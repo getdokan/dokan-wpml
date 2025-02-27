@@ -516,6 +516,8 @@ class Dokan_WPML {
      *
      * @since 1.1.1
      *
+     * @param string|null $lang
+     *
      * @return array
      */
     public function get_translated_query_vars_map( $lang = null ): array {
@@ -555,8 +557,6 @@ class Dokan_WPML {
             'toc',
             'biography',
             'reviews',
-            'settings',
-            'dashboard',
         ];
 
         $query_vars = apply_filters( 'dokan_wpml_settings_query_var_map', $query_vars );
@@ -1539,7 +1539,7 @@ class Dokan_WPML {
             $path_segments[0] = $dashboard_translated_slug;
         }
 
-        // Translate additional path segments.
+        // Translate path segments to the target language.
         $path_segments = $this->translate_path_segments( $path_segments, $lang['code'] );
 
         return trailingslashit( $base_url ) . trailingslashit( implode( '/', $path_segments ) );
@@ -1556,13 +1556,10 @@ class Dokan_WPML {
      * @return array Translated path segments
      */
     protected function translate_path_segments( $path_segments, $lang_code ) {
-        $segment_count = min( count( $path_segments ), 3 );
+        $segment_count = count( $path_segments );
 
         for ( $i = 1; $i < $segment_count; $i++ ) {
-            if ( ! empty( $path_segments[ $i ] ) ) {
-                $default_var         = $this->get_default_query_var( urldecode_deep( $path_segments[ $i ] ) );
-                $path_segments[ $i ] = $this->translate_endpoint( $default_var, $lang_code );
-            }
+            $path_segments[ $i ] = $this->translate_endpoint( urldecode_deep( $path_segments[ $i ] ), $lang_code );
         }
 
         return $path_segments;
