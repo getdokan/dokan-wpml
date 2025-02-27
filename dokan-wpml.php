@@ -179,6 +179,9 @@ class Dokan_WPML {
 
         add_action( 'dokan_vendor_biography_after_update', [ $this, 'dokan_vendor_biography_updated' ], 10, 3 );
         add_filter( 'dokan_get_vendor_biography_text', [ $this, 'get_translated_dokan_vendor_biography_text' ], 10, 2 );
+
+        // Add URL translation support for language switcher.
+        add_filter( 'wpml_ls_language_url', [ $this, 'filter_language_switcher_url' ], 99, 2 );
 	}
 
 	/**
@@ -514,9 +517,11 @@ class Dokan_WPML {
      *
      * @since 1.1.1
      *
+     * @param string|null $lang
+     *
      * @return array
      */
-    public function get_translated_query_vars_map(): array {
+    public function get_translated_query_vars_map( $lang = null ): array {
         $query_vars     = [
             'store',
             'payment',
@@ -569,7 +574,7 @@ class Dokan_WPML {
                 }
             }
 
-            $query_vars_map[ $query_var ] = $this->translate_endpoint( $query_var );
+            $query_vars_map[ $query_var ] = $this->translate_endpoint( $query_var, $lang );
         }
 
         return $query_vars_map;
@@ -940,10 +945,10 @@ class Dokan_WPML {
      *
      * @since 1.1.8
      *
-     * @param  string  $url URL.
+     * @param  string  $url               URL.
      * @param  string  $custom_store_slug Store slug.
-     * @param  int     $store_user_id Store user ID.
-     * @param  string  $tab Tab or custom endpoint..
+     * @param  int     $store_user_id     Store user ID.
+     * @param  string  $tab               Tab or custom endpoint.
      *
      * @return string
      */
@@ -1328,9 +1333,8 @@ class Dokan_WPML {
      *
      * @return string
      */
-    public function get_default_query_var( $query_var ) {
-        $query_var_map = $this->get_translated_query_vars_map();
-
+    public function get_default_query_var( $query_var, $lang = null ) {
+        $query_var_map     = $this->get_translated_query_vars_map( $lang );
         $default_query_var = array_search( $query_var, $query_var_map, true );
 
         if ( false === $default_query_var ) {
@@ -1483,6 +1487,64 @@ class Dokan_WPML {
         return $this->get_translated_single_string( $text, 'dokan', 'Vendor Biography Text: '.$name );
     }
 
+    /**
+     * Filter language switcher URLs for Dokan store and dashboard pages
+     *
+     * @since 1.1.9
+     *
+     * @param string $url  The language URL
+     * @param array  $lang Language data array
+     *
+     * @return string
+     */
+    public function filter_language_switcher_url( $url, $lang ) {
+        // Get home URL without WPML modifications.
+        $this->disable_url_translation();
+        $home_url = home_url();
+        $this->enable_url_translation();
+
+        $base_url = trailingslashit(
+            wpml_get_default_language() === $lang['code']
+                ? $home_url
+                : trailingslashit( $home_url ) . $lang['code']
+        );
+
+        $url_path = trim( str_replace( $base_url, '', $url ), '/' );
+        if ( empty( $url_path ) ) {
+            return $url;
+        }
+
+        // Translate path segments to the target language.
+        $path_segments       = explode( '/', $url_path );
+        $translated_segments = $this->translate_path_segments( $path_segments, $lang['code'] );
+
+        return apply_filters(
+            'dokan_wpml_get_language_switcher_url',
+            trailingslashit( $base_url ) . trailingslashit( implode( '/', $translated_segments ) ),
+            $path_segments,
+            $translated_segments,
+            $lang,
+            $base_url
+        );
+    }
+
+    /**
+     * Translate path segments in URL.
+     *
+     * @since 1.1.9
+     *
+     * @param array  $path_segments Path segments to translate
+     * @param string $lang_code     Target language code
+     *
+     * @return array Translated path segments
+     */
+    protected function translate_path_segments( $path_segments, $lang_code ) {
+        foreach ( $path_segments as $key => $segment ) {
+            $path_segments[ $key ] = $this->translate_endpoint( urldecode_deep( $segment ), $lang_code );
+        }
+
+        return $path_segments;
+    }
 } // Dokan_WPML
 
 function dokan_load_wpml() { // phpcs:ignore
