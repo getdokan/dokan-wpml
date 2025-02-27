@@ -180,6 +180,7 @@ class Dokan_WPML {
         add_action( 'dokan_vendor_biography_after_update', [ $this, 'dokan_vendor_biography_updated' ], 10, 3 );
         add_filter( 'dokan_get_vendor_biography_text', [ $this, 'get_translated_dokan_vendor_biography_text' ], 10, 2 );
 
+        // Add URL translation support for language switcher.
         add_filter( 'wpml_ls_language_url', [ $this, 'filter_language_switcher_url' ], 10, 2 );
 	}
 
@@ -557,6 +558,7 @@ class Dokan_WPML {
             'toc',
             'biography',
             'reviews',
+
         ];
 
         $query_vars = apply_filters( 'dokan_wpml_settings_query_var_map', $query_vars );
@@ -895,7 +897,6 @@ class Dokan_WPML {
 		$store_url        = dokan_get_store_url( $store_user->ID );
 
 		add_filter( 'wpml_ls_language_url', function( $url, $lang ) use ( $store_url, $store_user ) {
-
 		    return apply_filters( 'wpml_permalink', $store_url, $lang['code'] );
 	    }, 10, 2 );
     }
@@ -1333,8 +1334,7 @@ class Dokan_WPML {
      * @return string
      */
     public function get_default_query_var( $query_var, $lang = null ) {
-        $query_var_map = $this->get_translated_query_vars_map( $lang );
-
+        $query_var_map     = $this->get_translated_query_vars_map( $lang );
         $default_query_var = array_search( $query_var, $query_var_map, true );
 
         if ( false === $default_query_var ) {
@@ -1564,7 +1564,6 @@ class Dokan_WPML {
 
         return $path_segments;
     }
-
 } // Dokan_WPML
 
 function dokan_load_wpml() { // phpcs:ignore
