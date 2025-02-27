@@ -579,7 +579,7 @@ class Dokan_WPML {
 
         $store_url = dokan_get_option( 'custom_store_url', 'dokan_general', 'store' );
 
-        if ( ! in_array( $store_url, $query_vars ) ) {
+        if ( ! isset( $query_vars[ $store_url ] ) ) {
             $query_vars[] = $store_url;
         }
 
@@ -1527,15 +1527,18 @@ class Dokan_WPML {
         }
 
         try {
-            icl_register_string(
+            $this->register_single_string(
                 $this->wp_endpoints,
                 $option_value['custom_store_url'],
                 $option_value['custom_store_url'],
-                false,
-                wpml_get_default_language()
             );
         } catch ( Exception $e ) {
-            dokan_log( 'Dokan WPML - Error on registering vendor store URL endpoint: ' . $e->getMessage() );
+            dokan_log(
+                sprintf(
+                    __( 'Dokan WPML - Error on registering vendor store URL endpoint: %s', 'dokan-wpml' ),
+                    $e->getMessage()
+                )
+            );
         }
     }
 
@@ -1590,6 +1593,14 @@ class Dokan_WPML {
      * @return void
      */
     public function add_rewrite_rules( string $regex_slug, string $query_slug, string $after = 'top' ) {
+        if ( empty( $regex_slug ) || empty( $query_slug ) ) {
+            return;
+        }
+
+        if ( ! in_array( $after, [ 'top', 'bottom' ], true ) ) {
+            $after = 'top';
+        }
+
         add_rewrite_rule( $regex_slug . '/([^/]+)/?$', 'index.php?' . $query_slug . '=$matches[1]', $after );
         add_rewrite_rule( $regex_slug . '/([^/]+)/page/?([0-9]{1,})/?$', 'index.php?' . $query_slug . '=$matches[1]&paged=$matches[2]', $after );
 
