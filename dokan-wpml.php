@@ -3,12 +3,12 @@
  * Plugin Name: Dokan - WPML Integration
  * Plugin URI: https://wedevs.com/
  * Description: WPML and Dokan compatible package
- * Version: 1.1.8
+ * Version: 1.1.9
  * Author: weDevs
  * Author URI: https://wedevs.com/
  * Text Domain: dokan-wpml
- * WC requires at least: 8.0.0
- * WC tested up to: 9.3.3
+ * WC requires at least: 8.5.0
+ * WC tested up to: 9.7.0
  * Domain Path: /languages/
  * License: GPL2
  */
@@ -176,8 +176,8 @@ class Dokan_WPML {
         add_action( 'dokan_disable_url_translation', [ $this, 'disable_url_translation' ] );
         add_action( 'dokan_enable_url_translation', [ $this, 'enable_url_translation' ] );
 
-        add_filter( 'wp', [ $this, 'set_translated_query_var_to_default_query_var' ], 11 );
-        add_filter( 'wp', [ $this, 'set_custom_store_query_var' ], 11 );
+        add_action( 'wp', [ $this, 'set_translated_query_var_to_default_query_var' ], 11 );
+        add_action( 'wp', [ $this, 'set_custom_store_query_var' ], 11 );
 
         add_filter( 'dokan_set_store_categories', [ $this, 'set_translated_category' ] );
         add_filter( 'dokan_get_store_categories_in_vendor', [ $this, 'get_translated_category' ] );
@@ -471,7 +471,7 @@ class Dokan_WPML {
      *
      * @return array|mixed|object|stdClass[]|null
      */
-    public function add_language_query_args_dokan_count_posts_stock_status( $results, $post_type, $user_id, $stock_type, $exclude_product_types  ) {
+    public function add_language_query_args_dokan_count_posts_stock_status( $results, $post_type, $user_id, $stock_type, $exclude_product_types = [ 'booking', 'auction' ] ) {
         global $wpdb;
         $exclude_product_types_text = "'" . implode( "', '", esc_sql( $exclude_product_types ) ) . "'";
 
