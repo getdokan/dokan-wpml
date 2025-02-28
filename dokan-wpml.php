@@ -471,7 +471,7 @@ class Dokan_WPML {
      *
      * @return array|mixed|object|stdClass[]|null
      */
-    public function add_language_query_args_dokan_count_posts_stock_status( $results, $post_type, $user_id, $stock_type, $exclude_product_types  ) {
+    public function add_language_query_args_dokan_count_posts_stock_status( $results, $post_type, $user_id, $stock_type, $exclude_product_types = [ 'booking', 'auction' ] ) {
         global $wpdb;
         $exclude_product_types_text = "'" . implode( "', '", esc_sql( $exclude_product_types ) ) . "'";
 
