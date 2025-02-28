@@ -3,12 +3,12 @@
  * Plugin Name: Dokan - WPML Integration
  * Plugin URI: https://wedevs.com/
  * Description: WPML and Dokan compatible package
- * Version: 1.1.8
+ * Version: 1.1.9
  * Author: weDevs
  * Author URI: https://wedevs.com/
  * Text Domain: dokan-wpml
- * WC requires at least: 8.0.0
- * WC tested up to: 9.3.3
+ * WC requires at least: 8.5.0
+ * WC tested up to: 9.7.0
  * Domain Path: /languages/
  * License: GPL2
  */
@@ -125,6 +125,7 @@ class Dokan_WPML {
 		add_filter( 'dokan_get_terms_condition_url', [ $this, 'get_terms_condition_url' ], 10, 2 );
 		add_filter( 'dokan_redirect_login', [ $this, 'redirect_if_not_login' ], 90 );
 		add_filter( 'dokan_force_page_redirect', [ $this, 'force_redirect_page' ], 90, 2 );
+        add_action( 'init', [ $this, 'handle_flushing_rewrite_rules' ] );
 
 		// Load all filters hook
         add_filter('sanitize_user_meta_product_package_id', [ $this, 'set_subscription_pack_id_in_base_language' ], 10, 3 );
@@ -151,6 +152,13 @@ class Dokan_WPML {
 		add_action( 'dokan_product_change_status_after_save', [ $this, 'change_product_status' ], 10, 2 );
 		add_action( 'dokan_product_status_revert_after_save', [ $this, 'change_product_status' ], 10, 2 );
 
+        add_filter( 'dokan_count_posts_args', [ $this, 'add_language_query_args' ] );
+        add_filter( 'dokan_all_products_query', [ $this, 'add_language_query_args' ] );
+        add_filter( 'dokan_count_posts', [ $this, 'add_language_filter_for_dokan_count_posts' ], 10, 4 );
+        add_filter( 'dokan_count_stock_posts_cache_key', [ $this, 'add_language_query_args_to_post_stock_count' ], 10, 4 );
+        add_filter( 'dokan_count_posts_instock', [ $this, 'add_language_query_args_dokan_count_posts_stock_status' ], 10, 5 );
+        add_filter( 'dokan_count_posts_outofstock', [ $this, 'add_language_query_args_dokan_count_posts_stock_status' ], 10, 5 );
+
         // Single string translation.
         add_action( 'dokan_pro_register_shipping_status', [ $this, 'register_shipping_status_single_string' ] );
         add_action( 'dokan_pro_register_abuse_report_reason', [ $this, 'register_abuse_report_single_string' ] );
@@ -168,10 +176,16 @@ class Dokan_WPML {
         add_action( 'dokan_disable_url_translation', [ $this, 'disable_url_translation' ] );
         add_action( 'dokan_enable_url_translation', [ $this, 'enable_url_translation' ] );
 
-        add_filter( 'wp', [ $this, 'set_translated_query_var_to_default_query_var' ], 11 );
-        add_filter( 'wp', [ $this, 'set_custom_store_query_var' ], 11 );
+        add_action( 'wp', [ $this, 'set_translated_query_var_to_default_query_var' ], 11 );
+        add_action( 'wp', [ $this, 'set_custom_store_query_var' ], 11 );
+
         add_filter( 'dokan_set_store_categories', [ $this, 'set_translated_category' ] );
         add_filter( 'dokan_get_store_categories_in_vendor', [ $this, 'get_translated_category' ] );
+
+        // shipping methods
+        add_action( 'dokan_shipping_method_title_update', [ $this, 'register_shipping_method_title' ], 10, 3 );
+
+        add_filter( 'dokan_shipping_method_translatable_title', [ $this, 'get_translated_shipping_method_title' ], 10, 2 );
 
         add_action( 'dokan_vendor_vacation_message_updated', [ $this, 'dokan_vendor_vacation_message_updated' ], 10, 3 );
         add_action( 'dokan_vendor_vacation_message_schedule_updated', [ $this, 'dokan_vendor_vacation_message_updated' ], 10, 3 );
@@ -179,7 +193,12 @@ class Dokan_WPML {
 
         add_action( 'dokan_vendor_biography_after_update', [ $this, 'dokan_vendor_biography_updated' ], 10, 3 );
         add_filter( 'dokan_get_vendor_biography_text', [ $this, 'get_translated_dokan_vendor_biography_text' ], 10, 2 );
-	}
+
+        // Single store endpoint translation support.
+        add_action( 'dokan_after_saving_settings', [ $this, 'register_single_store_custom_endpoint' ], 10, 3 );
+        add_action( 'dokan_rewrite_rules_loaded', [ $this, 'handle_translated_single_store_endpoint_rewrite' ] );
+        add_action( 'wpml_st_add_string_translation', [ $this, 'handle_single_store_endpoint_translation_update' ] );
+    }
 
 	/**
 	 * Initialize the plugin tracker
@@ -376,6 +395,117 @@ class Dokan_WPML {
     }
 
     /**
+     * Add language support to product query args so that cache can be managed.
+     *
+     * @param array $args product query args.
+     *
+     * @return array
+     */
+    public function add_language_query_args( $args ) {
+        $args['lang'] = ICL_LANGUAGE_CODE;
+
+        return $args;
+    }
+
+    /**
+     * Vendor Product Count query override.
+     *
+     * @param mixed $result Previous result.
+     * @param string $post_type post type, (product)
+     * @param int $vendor_id Vendor ID.
+     * @param array $exclude_product_types Product types that need to be excluded.
+     *
+     * @return array|mixed|object|stdClass[]|null
+     */
+    public function add_language_filter_for_dokan_count_posts( $result, $post_type, $vendor_id, $exclude_product_types ) {
+        global $wpdb;
+
+        if ( $result ) {
+            return $result;
+        }
+
+        $exclude_product_types_text = "'" . implode( "', '", esc_sql( $exclude_product_types ) ) . "'";
+
+        return $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT post_status, COUNT( DISTINCT wpml_translations.trid ) AS num_posts FROM {$wpdb->posts} as posts
+                            JOIN {$wpdb->prefix}icl_translations wpml_translations ON posts.ID = wpml_translations.element_id AND wpml_translations.element_type = CONCAT('post_', posts.post_type)
+                            INNER JOIN {$wpdb->term_relationships} AS term_relationships ON posts.ID = term_relationships.object_id
+                            INNER JOIN {$wpdb->term_taxonomy} AS term_taxonomy ON term_relationships.term_taxonomy_id = term_taxonomy.term_taxonomy_id
+                            INNER JOIN {$wpdb->terms} AS terms ON term_taxonomy.term_id = terms.term_id
+                            WHERE
+                                term_taxonomy.taxonomy = 'product_type'
+                            AND terms.slug NOT IN ({$exclude_product_types_text})
+                            AND posts.post_type = %s
+                            AND posts.post_author = %d
+                                GROUP BY posts.post_status",
+                $post_type,
+                $vendor_id
+            ),
+            ARRAY_A
+        );
+    }
+
+    /**
+     * post_stock_count cache key language change support.
+     *
+     * @param string $cache_key Previous cache key.
+     * @param string $post_type Post type.
+     * @param int $user_id Vendor ID.
+     * @param string $stock_type Stock Status (instock, outofstock)
+     *
+     * @return string
+     */
+    public function add_language_query_args_to_post_stock_count( $cache_key, $post_type, $user_id, $stock_type ) {
+        return "count_stock_posts_{$user_id}_{$post_type}_{$stock_type}_lang_" . ICL_LANGUAGE_CODE;
+    }
+
+    /**
+     * Language support added for dokan_count_posts_{stock_status}
+     *
+     * @param mixed $results Previous status.
+     * @param string $post_type Post Type.
+     * @param int $user_id Vendor ID.
+     * @param string $stock_type Stock Type.
+     * @param array $exclude_product_types Excluded product types.
+     *
+     * @return array|mixed|object|stdClass[]|null
+     */
+    public function add_language_query_args_dokan_count_posts_stock_status( $results, $post_type, $user_id, $stock_type, $exclude_product_types = [ 'booking', 'auction' ] ) {
+        global $wpdb;
+        $exclude_product_types_text = "'" . implode( "', '", esc_sql( $exclude_product_types ) ) . "'";
+
+        if ( $results ) {
+            return $results;
+        }
+
+        return $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT p.post_status, COUNT( DISTINCT wpml_translations.trid ) AS num_posts
+                FROM {$wpdb->prefix}posts as p
+                    INNER JOIN {$wpdb->prefix}postmeta as pm ON p.ID = pm.post_id
+                    JOIN {$wpdb->prefix}icl_translations wpml_translations ON p.ID = wpml_translations.element_id AND wpml_translations.element_type = CONCAT('post_', p.post_type)
+
+                WHERE p.post_type = %s
+                AND p.post_author = %d
+                AND pm.meta_key   = '_stock_status'
+                AND pm.meta_value = %s
+                AND p.ID IN (
+                    SELECT tr.object_id FROM {$wpdb->prefix}terms AS t
+                    LEFT JOIN {$wpdb->prefix}term_taxonomy AS tt ON t.term_id = tt.term_taxonomy_id
+                    LEFT JOIN {$wpdb->prefix}term_relationships AS tr ON t.term_id = tr.term_taxonomy_id
+                    WHERE tt.taxonomy = 'product_type' AND t.slug NOT IN ({$exclude_product_types_text})
+                )
+                GROUP BY p.post_status",
+                $post_type,
+                $user_id,
+                $stock_type
+            ),
+            ARRAY_A
+        );
+    }
+
+    /**
      * Undocumented function
      *
      * @since 1.0.1
@@ -394,6 +524,22 @@ class Dokan_WPML {
         }
 
         return false;
+    }
+
+    /**
+     * Handle Flushing Rewrite Rules.
+     *
+     * @since 1.1.9
+     *
+     * @return void
+     */
+    public function handle_flushing_rewrite_rules() {
+        if ( ! get_transient( 'dokan_wpml_flush_rewrite_rules_needed' ) ) {
+            return;
+        }
+
+        flush_rewrite_rules();
+        delete_transient( 'dokan_wpml_flush_rewrite_rules_needed' );
     }
 
     /**
@@ -553,8 +699,13 @@ class Dokan_WPML {
             'toc',
             'biography',
             'reviews',
-
         ];
+
+        $store_url = dokan_get_option( 'custom_store_url', 'dokan_general', 'store' );
+
+        if ( ! isset( $query_vars[ $store_url ] ) ) {
+            $query_vars[] = $store_url;
+        }
 
         $query_vars = apply_filters( 'dokan_wpml_settings_query_var_map', $query_vars );
 
@@ -1401,6 +1552,33 @@ class Dokan_WPML {
     }
 
     /**
+     * Register shipping method title for string translation.
+     *
+     * @since 1.1.9
+     *
+     * @param string $title Shipping Method Title.
+     * @param int $instance_id Shipping Method Instance ID.
+     *
+     * @return void
+     */
+    public function register_shipping_method_title( string $title, int $instance_id ){
+        $this->register_single_string( 'dokan', 'Dokan Shipping Method Title: ' . $instance_id, $title );
+    }
+
+    /**
+     * Get translated shipping method title.
+     *
+     * @since 1.1.9
+     *
+     * @param string $title Shipping Method Title.
+     * @param int $instance_id Shipping Method Instance ID.
+     *
+     * @return string
+     */
+    public function get_translated_shipping_method_title ( string $title, int $instance_id ): string {
+        return $this->get_translated_single_string( $title, 'dokan', 'Dokan Shipping Method Title: ' . $instance_id );
+    }
+    /**
      * Get translated Verification Method Title.
      *
      * @since 1.1.6
@@ -1483,6 +1661,153 @@ class Dokan_WPML {
         return $this->get_translated_single_string( $text, 'dokan', 'Vendor Biography Text: '.$name );
     }
 
+    /**
+     * Register Single Store Custome Endpoint.
+     *
+     * @since 1.1.9
+     *
+     * @param string $option_name URL slug.
+     * @param array $option_value URL slug.
+     * @param array $old_options URL slug.
+     *
+     * @return void
+     */
+    public function register_single_store_custom_endpoint( string $option_name, array $option_value, array $old_options ) {
+        if ( 'dokan_general' !== $option_name || ! isset( $old_options['custom_store_url'] ) || $old_options['custom_store_url'] === $option_value['custom_store_url'] ) {
+            return;
+        }
+
+        try {
+            $this->register_single_string(
+                $this->wp_endpoints,
+                $option_value['custom_store_url'],
+                $option_value['custom_store_url'],
+            );
+        } catch ( Exception $e ) {
+            dokan_log(
+                sprintf(
+                    __( 'Dokan WPML - Error on registering vendor store URL endpoint: %s', 'dokan-wpml' ),
+                    $e->getMessage()
+                )
+            );
+        }
+    }
+
+    /**
+     * Handle Translated Single Store Endpoint Rewrite.
+     *
+     * @since 1.1.9
+     *
+     * @param string $url_slug URL slug.
+     *
+     * @return void
+     */
+    public function handle_translated_single_store_endpoint_rewrite( string $url_slug ) {
+        global $sitepress;
+
+        if ( ! $sitepress ) {
+            return;
+        }
+
+        $languages = $sitepress->get_active_languages();
+
+        $slug_list = [];
+
+        foreach ( $languages as $code => $language ) {
+            $translated_slug = $this->translate_endpoint( $url_slug, $code );
+
+            if ( $translated_slug === $url_slug ) {
+                continue;
+            }
+
+            $slug_list[] = $translated_slug;
+        }
+
+        if ( empty( $slug_list ) ) {
+            return;
+        }
+
+        foreach ( $slug_list as $translated_slug ) {
+            $this->add_rewrite_rules( $translated_slug, $url_slug );
+        }
+    }
+
+    /**
+     * Add Rewrite Rules.
+     *
+     * @since 1.1.9
+     *
+     * @param string $regex_slug Regex Slug
+     * @param string $query_slug Query Slug
+     * @param string $after      Position after
+     *
+     * @return void
+     */
+    public function add_rewrite_rules( string $regex_slug, string $query_slug, string $after = 'top' ) {
+        if ( empty( $regex_slug ) || empty( $query_slug ) ) {
+            return;
+        }
+
+        if ( ! in_array( $after, [ 'top', 'bottom' ], true ) ) {
+            $after = 'top';
+        }
+
+        add_rewrite_rule( $regex_slug . '/([^/]+)/?$', 'index.php?' . $query_slug . '=$matches[1]', $after );
+        add_rewrite_rule( $regex_slug . '/([^/]+)/page/?([0-9]{1,})/?$', 'index.php?' . $query_slug . '=$matches[1]&paged=$matches[2]', $after );
+
+        add_rewrite_rule( $regex_slug . '/([^/]+)/section/?([0-9]{1,})/?$', 'index.php?' . $query_slug . '=$matches[1]&term=$matches[2]&term_section=true', $after );
+        add_rewrite_rule( $regex_slug . '/([^/]+)/section/?([0-9]{1,})/page/?([0-9]{1,})/?$', 'index.php?' . $query_slug . '=$matches[1]&term=$matches[2]&paged=$matches[3]&term_section=true', $after );
+
+        add_rewrite_rule( $regex_slug . '/([^/]+)/toc?$', 'index.php?' . $query_slug . '=$matches[1]&toc=true', $after );
+        add_rewrite_rule( $regex_slug . '/([^/]+)/toc/page/?([0-9]{1,})/?$', 'index.php?' . $query_slug . '=$matches[1]&paged=$matches[2]&toc=true', $after );
+    }
+
+    /**
+     * Handle Single Store Endpoint Translation Update.
+     *
+     * @since 1.1.9
+     *
+     * @param int $translated_string_id Translated string ID.
+     *
+     * @return void
+     */
+    public function handle_single_store_endpoint_translation_update( int $translated_string_id ) {
+        $custom_store_url = dokan_get_option( 'custom_store_url', 'dokan_general', 'store' );
+
+        // Check if translation updated for the custom store URL.
+        if ( $custom_store_url !== $this->get_original_string_using_translated_string_id( $translated_string_id ) ) {
+            return;
+        }
+
+        // Set transient to flush rewrite rules on next request.
+        set_transient( 'dokan_wpml_flush_rewrite_rules_needed', 1 );
+    }
+
+    /**
+     * Get Original String by Translated String ID.
+     *
+     * @since 1.1.9
+     *
+     * @param string $translated_string_id Translated String ID
+     *
+     * @return string|null Orininal string or null if not found
+     */
+    public function get_original_string_using_translated_string_id( string $translated_string_id ): ?string {
+        global $wpdb;
+
+        return $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT
+                        s.name
+                    FROM
+                        {$wpdb->prefix}icl_strings AS s
+                        INNER JOIN {$wpdb->prefix}icl_string_translations AS st
+                    WHERE
+                        s.id = st.string_id AND st.id = %d",
+                $translated_string_id
+            )
+        );
+    }
 } // Dokan_WPML
 
 function dokan_load_wpml() { // phpcs:ignore

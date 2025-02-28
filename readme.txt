@@ -2,12 +2,12 @@
 Contributors: wedevs, dokaninc
 Tags: WPML, i18n, l10n, Translation, Dokan
 Donate link: https://tareq.co/donate
-Requires at least: 6.4
-Tested up to: 6.6.1
-WC requires at least: 8.0.0
-WC tested up to: 9.3.3
+Requires at least: 6.5
+Tested up to: 6.7.2
+WC requires at least: 8.5.0
+WC tested up to: 9.7.0
 Requires PHP: 7.4
-Stable tag: 1.1.8
+Stable tag: 1.1.9
 License: GPL v2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -51,6 +51,13 @@ Ans: Yes, you can contact the WPML team. They offer translation service via thir
 nothing here
 
 == Changelog ==
+
+v1.1.9 -> Feb 28, 2025
+---------------------------
+- **fix:** Product status count fix for vendor dashboard.
+- **update:** Added support for Dokan single store custom endpoint translation.
+- **update:** Shipping method title translate support added.
+- **update:** Vendor store url additional endpoint translation added.
 
 v1.1.8 -> Feb 11, 2025
 ---------------------------
