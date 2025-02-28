@@ -152,6 +152,13 @@ class Dokan_WPML {
 		add_action( 'dokan_product_change_status_after_save', [ $this, 'change_product_status' ], 10, 2 );
 		add_action( 'dokan_product_status_revert_after_save', [ $this, 'change_product_status' ], 10, 2 );
 
+        add_filter( 'dokan_count_posts_args', [ $this, 'add_language_query_args' ] );
+        add_filter( 'dokan_all_products_query', [ $this, 'add_language_query_args' ] );
+        add_filter( 'dokan_count_posts', [ $this, 'add_language_filter_for_dokan_count_posts' ], 10, 4 );
+        add_filter( 'dokan_count_stock_posts_cache_key', [ $this, 'add_language_query_args_to_post_stock_count' ], 10, 4 );
+        add_filter( 'dokan_count_posts_instock', [ $this, 'add_language_query_args_dokan_count_posts_stock_status' ], 10, 5 );
+        add_filter( 'dokan_count_posts_outofstock', [ $this, 'add_language_query_args_dokan_count_posts_stock_status' ], 10, 5 );
+
         // Single string translation.
         add_action( 'dokan_pro_register_shipping_status', [ $this, 'register_shipping_status_single_string' ] );
         add_action( 'dokan_pro_register_abuse_report_reason', [ $this, 'register_abuse_report_single_string' ] );
@@ -171,6 +178,7 @@ class Dokan_WPML {
 
         add_filter( 'wp', [ $this, 'set_translated_query_var_to_default_query_var' ], 11 );
         add_filter( 'wp', [ $this, 'set_custom_store_query_var' ], 11 );
+
         add_filter( 'dokan_set_store_categories', [ $this, 'set_translated_category' ] );
         add_filter( 'dokan_get_store_categories_in_vendor', [ $this, 'get_translated_category' ] );
 
@@ -384,6 +392,117 @@ class Dokan_WPML {
         $lang_post_id = wpml_object_id_filter( $page_id, 'page', true, ICL_LANGUAGE_CODE );
 
         return get_permalink( $lang_post_id );
+    }
+
+    /**
+     * Add language support to product query args so that cache can be managed.
+     *
+     * @param array $args product query args.
+     *
+     * @return array
+     */
+    public function add_language_query_args( $args ) {
+        $args['lang'] = ICL_LANGUAGE_CODE;
+
+        return $args;
+    }
+
+    /**
+     * Vendor Product Count query override.
+     *
+     * @param mixed $result Previous result.
+     * @param string $post_type post type, (product)
+     * @param int $vendor_id Vendor ID.
+     * @param array $exclude_product_types Product types that need to be excluded.
+     *
+     * @return array|mixed|object|stdClass[]|null
+     */
+    public function add_language_filter_for_dokan_count_posts( $result, $post_type, $vendor_id, $exclude_product_types ) {
+        global $wpdb;
+
+        if ( $result ) {
+            return $result;
+        }
+
+        $exclude_product_types_text = "'" . implode( "', '", esc_sql( $exclude_product_types ) ) . "'";
+
+        return $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT post_status, COUNT( DISTINCT wpml_translations.trid ) AS num_posts FROM {$wpdb->posts} as posts
+                            JOIN {$wpdb->prefix}icl_translations wpml_translations ON posts.ID = wpml_translations.element_id AND wpml_translations.element_type = CONCAT('post_', posts.post_type)
+                            INNER JOIN {$wpdb->term_relationships} AS term_relationships ON posts.ID = term_relationships.object_id
+                            INNER JOIN {$wpdb->term_taxonomy} AS term_taxonomy ON term_relationships.term_taxonomy_id = term_taxonomy.term_taxonomy_id
+                            INNER JOIN {$wpdb->terms} AS terms ON term_taxonomy.term_id = terms.term_id
+                            WHERE
+                                term_taxonomy.taxonomy = 'product_type'
+                            AND terms.slug NOT IN ({$exclude_product_types_text})
+                            AND posts.post_type = %s
+                            AND posts.post_author = %d
+                                GROUP BY posts.post_status",
+                $post_type,
+                $vendor_id
+            ),
+            ARRAY_A
+        );
+    }
+
+    /**
+     * post_stock_count cache key language change support.
+     *
+     * @param string $cache_key Previous cache key.
+     * @param string $post_type Post type.
+     * @param int $user_id Vendor ID.
+     * @param string $stock_type Stock Status (instock, outofstock)
+     *
+     * @return string
+     */
+    public function add_language_query_args_to_post_stock_count( $cache_key, $post_type, $user_id, $stock_type ) {
+        return "count_stock_posts_{$user_id}_{$post_type}_{$stock_type}_lang_" . ICL_LANGUAGE_CODE;
+    }
+
+    /**
+     * Language support added for dokan_count_posts_{stock_status}
+     *
+     * @param mixed $results Previous status.
+     * @param string $post_type Post Type.
+     * @param int $user_id Vendor ID.
+     * @param string $stock_type Stock Type.
+     * @param array $exclude_product_types Excluded product types.
+     *
+     * @return array|mixed|object|stdClass[]|null
+     */
+    public function add_language_query_args_dokan_count_posts_stock_status( $results, $post_type, $user_id, $stock_type, $exclude_product_types  ) {
+        global $wpdb;
+        $exclude_product_types_text = "'" . implode( "', '", esc_sql( $exclude_product_types ) ) . "'";
+
+        if ( $results ) {
+            return $results;
+        }
+
+        return $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT p.post_status, COUNT( DISTINCT wpml_translations.trid ) AS num_posts
+                FROM {$wpdb->prefix}posts as p
+                    INNER JOIN {$wpdb->prefix}postmeta as pm ON p.ID = pm.post_id
+                    JOIN {$wpdb->prefix}icl_translations wpml_translations ON p.ID = wpml_translations.element_id AND wpml_translations.element_type = CONCAT('post_', p.post_type)
+
+                WHERE p.post_type = %s
+                AND p.post_author = %d
+                AND pm.meta_key   = '_stock_status'
+                AND pm.meta_value = %s
+                AND p.ID IN (
+                    SELECT tr.object_id FROM {$wpdb->prefix}terms AS t
+                    LEFT JOIN {$wpdb->prefix}term_taxonomy AS tt ON t.term_id = tt.term_taxonomy_id
+                    LEFT JOIN {$wpdb->prefix}term_relationships AS tr ON t.term_id = tr.term_taxonomy_id
+                    WHERE tt.taxonomy = 'product_type' AND t.slug NOT IN ({$exclude_product_types_text})
+                )
+                GROUP BY p.post_status",
+                $post_type,
+                $user_id,
+                $stock_type
+            ),
+            ARRAY_A
+        );
     }
 
     /**
