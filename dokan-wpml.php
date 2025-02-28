@@ -125,6 +125,7 @@ class Dokan_WPML {
 		add_filter( 'dokan_get_terms_condition_url', [ $this, 'get_terms_condition_url' ], 10, 2 );
 		add_filter( 'dokan_redirect_login', [ $this, 'redirect_if_not_login' ], 90 );
 		add_filter( 'dokan_force_page_redirect', [ $this, 'force_redirect_page' ], 90, 2 );
+        add_action( 'init', [ $this, 'handle_flushing_rewrite_rules' ] );
 
 		// Load all filters hook
         add_filter('sanitize_user_meta_product_package_id', [ $this, 'set_subscription_pack_id_in_base_language' ], 10, 3 );
@@ -179,7 +180,12 @@ class Dokan_WPML {
 
         add_action( 'dokan_vendor_biography_after_update', [ $this, 'dokan_vendor_biography_updated' ], 10, 3 );
         add_filter( 'dokan_get_vendor_biography_text', [ $this, 'get_translated_dokan_vendor_biography_text' ], 10, 2 );
-	}
+
+        // Single store endpoint translation support.
+        add_action( 'dokan_after_saving_settings', [ $this, 'register_single_store_custom_endpoint' ], 10, 3 );
+        add_action( 'dokan_rewrite_rules_loaded', [ $this, 'handle_translated_single_store_endpoint_rewrite' ] );
+        add_action( 'wpml_st_add_string_translation', [ $this, 'handle_single_store_endpoint_translation_update' ] );
+    }
 
 	/**
 	 * Initialize the plugin tracker
@@ -397,6 +403,22 @@ class Dokan_WPML {
     }
 
     /**
+     * Handle Flushing Rewrite Rules.
+     *
+     * @since 1.1.9
+     *
+     * @return void
+     */
+    public function handle_flushing_rewrite_rules() {
+        if ( ! get_transient( 'dokan_wpml_flush_rewrite_rules_needed' ) ) {
+            return;
+        }
+
+        flush_rewrite_rules();
+        delete_transient( 'dokan_wpml_flush_rewrite_rules_needed' );
+    }
+
+    /**
      * Filter dokan navigation url for specific language
      *
      * @since 1.0.0
@@ -553,8 +575,13 @@ class Dokan_WPML {
             'toc',
             'biography',
             'reviews',
-
         ];
+
+        $store_url = dokan_get_option( 'custom_store_url', 'dokan_general', 'store' );
+
+        if ( ! isset( $query_vars[ $store_url ] ) ) {
+            $query_vars[] = $store_url;
+        }
 
         $query_vars = apply_filters( 'dokan_wpml_settings_query_var_map', $query_vars );
 
@@ -1483,6 +1510,153 @@ class Dokan_WPML {
         return $this->get_translated_single_string( $text, 'dokan', 'Vendor Biography Text: '.$name );
     }
 
+    /**
+     * Register Single Store Custome Endpoint.
+     *
+     * @since 1.1.9
+     *
+     * @param string $option_name URL slug.
+     * @param array $option_value URL slug.
+     * @param array $old_options URL slug.
+     *
+     * @return void
+     */
+    public function register_single_store_custom_endpoint( string $option_name, array $option_value, array $old_options ) {
+        if ( 'dokan_general' !== $option_name || ! isset( $old_options['custom_store_url'] ) || $old_options['custom_store_url'] === $option_value['custom_store_url'] ) {
+            return;
+        }
+
+        try {
+            $this->register_single_string(
+                $this->wp_endpoints,
+                $option_value['custom_store_url'],
+                $option_value['custom_store_url'],
+            );
+        } catch ( Exception $e ) {
+            dokan_log(
+                sprintf(
+                    __( 'Dokan WPML - Error on registering vendor store URL endpoint: %s', 'dokan-wpml' ),
+                    $e->getMessage()
+                )
+            );
+        }
+    }
+
+    /**
+     * Handle Translated Single Store Endpoint Rewrite.
+     *
+     * @since 1.1.9
+     *
+     * @param string $url_slug URL slug.
+     *
+     * @return void
+     */
+    public function handle_translated_single_store_endpoint_rewrite( string $url_slug ) {
+        global $sitepress;
+
+        if ( ! $sitepress ) {
+            return;
+        }
+
+        $languages = $sitepress->get_active_languages();
+
+        $slug_list = [];
+
+        foreach ( $languages as $code => $language ) {
+            $translated_slug = $this->translate_endpoint( $url_slug, $code );
+
+            if ( $translated_slug === $url_slug ) {
+                continue;
+            }
+
+            $slug_list[] = $translated_slug;
+        }
+
+        if ( empty( $slug_list ) ) {
+            return;
+        }
+
+        foreach ( $slug_list as $translated_slug ) {
+            $this->add_rewrite_rules( $translated_slug, $url_slug );
+        }
+    }
+
+    /**
+     * Add Rewrite Rules.
+     *
+     * @since 1.1.9
+     *
+     * @param string $regex_slug Regex Slug
+     * @param string $query_slug Query Slug
+     * @param string $after      Position after
+     *
+     * @return void
+     */
+    public function add_rewrite_rules( string $regex_slug, string $query_slug, string $after = 'top' ) {
+        if ( empty( $regex_slug ) || empty( $query_slug ) ) {
+            return;
+        }
+
+        if ( ! in_array( $after, [ 'top', 'bottom' ], true ) ) {
+            $after = 'top';
+        }
+
+        add_rewrite_rule( $regex_slug . '/([^/]+)/?$', 'index.php?' . $query_slug . '=$matches[1]', $after );
+        add_rewrite_rule( $regex_slug . '/([^/]+)/page/?([0-9]{1,})/?$', 'index.php?' . $query_slug . '=$matches[1]&paged=$matches[2]', $after );
+
+        add_rewrite_rule( $regex_slug . '/([^/]+)/section/?([0-9]{1,})/?$', 'index.php?' . $query_slug . '=$matches[1]&term=$matches[2]&term_section=true', $after );
+        add_rewrite_rule( $regex_slug . '/([^/]+)/section/?([0-9]{1,})/page/?([0-9]{1,})/?$', 'index.php?' . $query_slug . '=$matches[1]&term=$matches[2]&paged=$matches[3]&term_section=true', $after );
+
+        add_rewrite_rule( $regex_slug . '/([^/]+)/toc?$', 'index.php?' . $query_slug . '=$matches[1]&toc=true', $after );
+        add_rewrite_rule( $regex_slug . '/([^/]+)/toc/page/?([0-9]{1,})/?$', 'index.php?' . $query_slug . '=$matches[1]&paged=$matches[2]&toc=true', $after );
+    }
+
+    /**
+     * Handle Single Store Endpoint Translation Update.
+     *
+     * @since 1.1.9
+     *
+     * @param int $translated_string_id Translated string ID.
+     *
+     * @return void
+     */
+    public function handle_single_store_endpoint_translation_update( int $translated_string_id ) {
+        $custom_store_url = dokan_get_option( 'custom_store_url', 'dokan_general', 'store' );
+
+        // Check if translation updated for the custom store URL.
+        if ( $custom_store_url !== $this->get_original_string_using_translated_string_id( $translated_string_id ) ) {
+            return;
+        }
+
+        // Set transient to flush rewrite rules on next request.
+        set_transient( 'dokan_wpml_flush_rewrite_rules_needed', 1 );
+    }
+
+    /**
+     * Get Original String by Translated String ID.
+     *
+     * @since 1.1.9
+     *
+     * @param string $translated_string_id Translated String ID
+     *
+     * @return string|null Orininal string or null if not found
+     */
+    public function get_original_string_using_translated_string_id( string $translated_string_id ): ?string {
+        global $wpdb;
+
+        return $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT
+                        s.name
+                    FROM
+                        {$wpdb->prefix}icl_strings AS s
+                        INNER JOIN {$wpdb->prefix}icl_string_translations AS st
+                    WHERE
+                        s.id = st.string_id AND st.id = %d",
+                $translated_string_id
+            )
+        );
+    }
 } // Dokan_WPML
 
 function dokan_load_wpml() { // phpcs:ignore
