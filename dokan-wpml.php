@@ -1905,7 +1905,7 @@ class Dokan_WPML {
      *
      * @return array Translated path segments
      */
-    protected function translate_path_segments( $path_segments, $lang_code ) {
+    public function translate_path_segments( $path_segments, $lang_code ) {
         foreach ( $path_segments as $key => $segment ) {
             $path_segments[ $key ] = $this->translate_endpoint( urldecode_deep( $segment ), $lang_code );
         }
