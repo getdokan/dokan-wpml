@@ -201,6 +201,8 @@ class Dokan_WPML {
 
 		add_action( 'dokan_product_delete', [ $this, 'before_product_delete' ] );
 		add_action( 'dokan_product_bulk_delete', [ $this, 'before_product_delete' ] );
+
+        add_action( 'wp_enqueue_scripts', [ $this, 'enqueue' ] );
 	}
 
 	/**
@@ -1812,19 +1814,43 @@ class Dokan_WPML {
         );
     }
 
-		/**
-		 * Support WPML delete post actions on the frontend dashboard.
-		 *
-		 * @since 1.1.7
-		 *
-		 * @return void
-		 */
-		public function before_product_delete() {
-			if ( class_exists( 'WPML_Frontend_Post_Actions' ) ) {
-				global $wpml_post_translations;
-				add_action( 'delete_post', [ $wpml_post_translations, 'delete_post_actions' ] );
-			}
-		}
+    /**
+     * Support WPML delete post actions on the frontend dashboard.
+     *
+     * @since 1.1.7
+     *
+     * @return void
+     */
+    public function before_product_delete() {
+        if ( class_exists( 'WPML_Frontend_Post_Actions' ) ) {
+            global $wpml_post_translations;
+            add_action( 'delete_post', [ $wpml_post_translations, 'delete_post_actions' ] );
+        }
+    }
+
+    /**
+     * Enqueue scripts for the seller dashboard.
+     *
+     * This method enqueues the necessary JavaScript files required for the
+     * seller dashboard if the current page is the seller dashboard.
+     *
+     * @return void
+     */
+    public function enqueue() {
+        if (! dokan_is_seller_dashboard() ) {
+            return;
+        }
+
+        $scripts_file = include( plugin_dir_path( __FILE__ ) . 'build/index.asset.php' );
+
+        wp_enqueue_script(
+            'dokan-wpml-switcher',
+            plugin_dir_url( __FILE__ ) . 'build/index.js',
+            $scripts_file['dependencies'],
+            $scripts_file['version'],
+            true
+        );
+    }
 } // Dokan_WPML
 
 function dokan_load_wpml() { // phpcs:ignore

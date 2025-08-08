@@ -1,9 +1,9 @@
 node_modules
 build
+dist
 npm-debug.log
 .DS_Store
 includes/.DS_Store
-.DS_Store
 .idea
 plugin-deploy.sh
 secret.json
