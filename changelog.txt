@@ -1,3 +1,15 @@
+v1.1.10 -> Aug 27, 2025
+---------------------------
+- **fix:** Settings submenu URL translation issue with language switcher.
+- **update:** Added WPML translation support for Dokan category-wise commission custom term fields.
+
+v1.1.9 -> Feb 28, 2025
+---------------------------
+- **fix:** Product status count fix for vendor dashboard.
+- **update:** Added support for Dokan single store custom endpoint translation.
+- **update:** Shipping method title translate support added.
+- **update:** Vendor store url additional endpoint translation added.
+
 v1.1.8 -> Feb 11, 2025
 ---------------------------
 - **fix:** Added translation support for vendor verification and biography messages

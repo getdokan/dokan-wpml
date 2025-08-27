@@ -2,14 +2,14 @@
 # This file is distributed under the GPL2.
 msgid ""
 msgstr ""
-"Project-Id-Version: Dokan - WPML Integration 1.1.9\n"
+"Project-Id-Version: Dokan - WPML Integration 1.1.10\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/dokan-wpml\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-02-28T06:48:11+00:00\n"
+"POT-Creation-Date: 2025-08-27T11:46:31+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.11.0\n"
 "X-Domain: dokan-wpml\n"
@@ -36,15 +36,15 @@ msgid "weDevs"
 msgstr ""
 
 #. translators: %1$s: opening anchor tag, %2$s: closing anchor tag
-#: dokan-wpml.php:245
+#: dokan-wpml.php:251
 msgid "<b>Dokan - WPML Integration</b> requires %1$s Dokan plugin %2$s to be installed & activated!"
 msgstr ""
 
 #. translators: %1$s: opening anchor tag, %2$s: closing anchor tag
-#: dokan-wpml.php:251
+#: dokan-wpml.php:257
 msgid "<b>Dokan - WPML Integration</b> requires %1$s WPML Multilingual CMS %2$s to be installed & activated!"
 msgstr ""
 
-#: dokan-wpml.php:1689
+#: dokan-wpml.php:1696
 msgid "Dokan WPML - Error on registering vendor store URL endpoint: %s"
 msgstr ""
