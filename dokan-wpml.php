@@ -656,6 +656,8 @@ class Dokan_WPML {
             'ticket_keyword',
             'ticket_status',
             'dokan-support-listing-search-nonce',
+	        'zone_id',
+	        'instance_id',
         ];
 
         return array_merge( $params, $dokan_params );
