@@ -33,6 +33,11 @@
         <custom-field action="copy">_product_addons_exclude_global</custom-field>
         <custom-field action="copy">_product_addons</custom-field>
     </custom-fields>
+    <custom-term-fields>
+        <custom-term-field action="copy">per_category_admin_commission_type</custom-term-field>
+        <custom-term-field action="copy">per_category_admin_additional_fee</custom-term-field>
+        <custom-term-field action="copy">per_category_admin_commission</custom-term-field>
+    </custom-term-fields>
     <taxonomies>
         <taxonomy translate="2">store_category</taxonomy>
     </taxonomies>

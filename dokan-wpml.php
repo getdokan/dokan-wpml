@@ -3,7 +3,7 @@
  * Plugin Name: Dokan - WPML Integration
  * Plugin URI: https://wedevs.com/
  * Description: WPML and Dokan compatible package
- * Version: 1.1.9
+ * Version: 1.1.10
  * Author: weDevs
  * Author URI: https://wedevs.com/
  * Text Domain: dokan-wpml
@@ -193,6 +193,9 @@ class Dokan_WPML {
 
         add_action( 'dokan_vendor_biography_after_update', [ $this, 'dokan_vendor_biography_updated' ], 10, 3 );
         add_filter( 'dokan_get_vendor_biography_text', [ $this, 'get_translated_dokan_vendor_biography_text' ], 10, 2 );
+
+        // Add URL translation support for language switcher.
+        add_filter( 'wpml_ls_language_url', [ $this, 'filter_language_switcher_url' ], 99, 2 );
 
         // Single store endpoint translation support.
         add_action( 'dokan_after_saving_settings', [ $this, 'register_single_store_custom_endpoint' ], 10, 3 );
@@ -665,9 +668,11 @@ class Dokan_WPML {
      *
      * @since 1.1.1
      *
+     * @param string|null $lang
+     *
      * @return array
      */
-    public function get_translated_query_vars_map(): array {
+    public function get_translated_query_vars_map( $lang = null ): array {
         $query_vars     = [
             'store',
             'payment',
@@ -725,7 +730,7 @@ class Dokan_WPML {
                 }
             }
 
-            $query_vars_map[ $query_var ] = $this->translate_endpoint( $query_var );
+            $query_vars_map[ $query_var ] = $this->translate_endpoint( $query_var, $lang );
         }
 
         return $query_vars_map;
@@ -1096,10 +1101,10 @@ class Dokan_WPML {
      *
      * @since 1.1.8
      *
-     * @param  string  $url URL.
+     * @param  string  $url               URL.
      * @param  string  $custom_store_slug Store slug.
-     * @param  int     $store_user_id Store user ID.
-     * @param  string  $tab Tab or custom endpoint..
+     * @param  int     $store_user_id     Store user ID.
+     * @param  string  $tab               Tab or custom endpoint.
      *
      * @return string
      */
@@ -1484,9 +1489,8 @@ class Dokan_WPML {
      *
      * @return string
      */
-    public function get_default_query_var( $query_var ) {
-        $query_var_map = $this->get_translated_query_vars_map();
-
+    public function get_default_query_var( $query_var, $lang = null ) {
+        $query_var_map     = $this->get_translated_query_vars_map( $lang );
         $default_query_var = array_search( $query_var, $query_var_map, true );
 
         if ( false === $default_query_var ) {
@@ -1850,6 +1854,90 @@ class Dokan_WPML {
             $scripts_file['version'],
             true
         );
+    }
+
+    /**
+     * Filter language switcher URLs for Dokan store and dashboard pages
+     *
+     * @since 1.1.10
+     *
+     * @param string $url  The language URL
+     * @param array  $lang Language data array
+     *
+     * @return string
+     */
+    public function filter_language_switcher_url( $url, $lang ) {
+        $lang_code = $lang['code'] ?? '';
+        if ( empty( $url ) || empty( $lang_code ) ) {
+            return $url; // Return early if URL or language code is empty
+        }
+
+        // Get home URL without WPML modifications.
+        $this->disable_url_translation();
+        $home_url = home_url();
+        $this->enable_url_translation();
+
+        // Get language negotiation type and build base URL
+        $default_language_code     = wpml_get_default_language();
+        $language_negotiation_type = (int) apply_filters( 'wpml_setting', 1, 'language_negotiation_type' );
+        $is_parameter_based        = ( WPML_LANGUAGE_NEGOTIATION_TYPE_PARAMETER === $language_negotiation_type );
+
+        // If the language negotiation type is parameter-based, we need to use the home URL as the base URL.
+        if ( ! $is_parameter_based && $default_language_code !== $lang_code ) {
+            $base_url = trailingslashit( $home_url ) . $lang_code;
+        } else {
+            $base_url = $home_url;
+        }
+
+        // Remove query parameters for parameter-based negotiation.
+        $url_path = trim( str_replace( $base_url, '', $url ), '/' );
+        if ( $is_parameter_based && strpos( $url_path, '?' ) !== false ) {
+            $url_path = explode( '?', $url_path, 2 )[0];
+        }
+
+        if ( empty( $url_path ) ) {
+            return $url;
+        }
+
+        // Translate path segments to the target language.
+        $path_segments         = explode( '/', $url_path );
+        $translated_segments   = $this->translate_path_segments( $path_segments, $lang_code );
+        $language_switcher_url = trailingslashit( $base_url ) . trailingslashit( implode( '/', $translated_segments ) );
+
+        // If the language negotiation type is parameter-based, append the language code as a query parameter.
+        if ( $is_parameter_based ) {
+            $language_switcher_url = add_query_arg(
+                [ 'lang' => $lang_code ],
+                $language_switcher_url
+            );
+        }
+
+        return apply_filters(
+            'dokan_wpml_get_language_switcher_url',
+            $language_switcher_url,
+            $path_segments,
+            $translated_segments,
+            $lang,
+            $base_url
+        );
+    }
+
+    /**
+     * Translate path segments in URL.
+     *
+     * @since 1.1.9
+     *
+     * @param array  $path_segments Path segments to translate
+     * @param string $lang_code     Target language code
+     *
+     * @return array Translated path segments
+     */
+    public function translate_path_segments( $path_segments, $lang_code ) {
+        foreach ( $path_segments as $key => $segment ) {
+            $path_segments[ $key ] = $this->translate_endpoint( urldecode_deep( $segment ), $lang_code );
+        }
+
+        return $path_segments;
     }
 } // Dokan_WPML
 
