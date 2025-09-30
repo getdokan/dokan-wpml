@@ -6,6 +6,7 @@ const _ = require( 'lodash' );
 
 const pluginFiles = [
     'languages/',
+    'build',
     'changelog.txt',
     'readme.txt',
     'dokan-wpml.php',
@@ -22,7 +23,7 @@ const { version } = JSON.parse( fs.readFileSync( 'package.json' ) );
 exec(
     'rm -rf *',
     {
-        cwd: 'build',
+        cwd: 'dist',
     },
     ( error ) => {
         if ( error ) {
@@ -37,10 +38,10 @@ exec(
                 )
             );
             // Making build folder.
-            fs.mkdirp( 'build' );
+            fs.mkdirp( 'dist' );
         }
 
-        const dest = 'build/dokan-wpml'; // Temporary folder name after coping all the files here.
+        const dest = 'dist/dokan-wpml'; // Temporary folder name after coping all the files here.
         fs.mkdirp( dest );
 
         console.log( `🗜 Started making the zip ...` );
