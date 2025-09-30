@@ -76,6 +76,8 @@ class Dokan_WPML {
      * @uses add_action()
      */
     public function __construct() {
+        require_once __DIR__ . '/vendor/autoload.php';
+
         register_activation_hook( __FILE__, [ $this, 'dependency_missing_notice' ] );
 
         // Localize our plugin
@@ -216,7 +218,7 @@ class Dokan_WPML {
 	 * @return void
 	 */
 	public function appsero_init_tracker() {
-		$client = new \Appsero\Client( 'f7973783-e0d0-4d56-bbba-229e5581b0cd', 'Dokan - WPML Integration', __FILE__ );
+		$client = new WeDevs\DokanWpml\Dependencies\Appsero\Client( 'f7973783-e0d0-4d56-bbba-229e5581b0cd', 'Dokan - WPML Integration', __FILE__ );
 
 		$this->insights = $client->insights();
 
