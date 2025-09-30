@@ -73,7 +73,7 @@ exec(
         exec(
             `zip ${ zipFile } dokan-wpml -rq`,
             {
-                cwd: 'build'
+                cwd: 'dist'
             },
             ( error ) => {
                 if ( error ) {
