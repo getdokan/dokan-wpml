@@ -1,10 +1,23 @@
 {
   "name": "dokan-wpml",
-  "version": "1.1.11",
+  "version": "1.1.12",
   "description": "WPML compatibility for dokan plugin",
   "author": "weDevs",
   "license": "GPL",
   "private": true,
+  "directories": {
+    "build": "build",
+    "languages": "languages"
+  },
+  "files": [
+    "build",
+    "languages",
+    "changelog.txt",
+    "package.json",
+    "readme.txt",
+    "wpml-config.xml",
+    "dokan-wpml.php"
+  ],
   "scripts": {
     "build": "wp-scripts build",
     "start": "wp-scripts start",

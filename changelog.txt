@@ -1,3 +1,7 @@
+v1.1.12 -> Sep 30, 2025
+---------------------------
+- **fix:** Fixed build script.
+
 v1.1.11 -> Sep 30, 2025
 ---------------------------
 - **update:** Language switching support for vendor dashboard hash routing added.
