@@ -3,11 +3,11 @@ Contributors: wedevs, dokaninc
 Tags: WPML, i18n, l10n, Translation, Dokan
 Donate link: https://tareq.co/donate
 Requires at least: 6.5
-Tested up to: 6.7.2
+Tested up to: 6.8.2
 WC requires at least: 8.5.0
-WC tested up to: 9.7.0
+WC tested up to: 10.2.2
 Requires PHP: 7.4
-Stable tag: 1.1.10
+Stable tag: 1.1.11
 License: GPL v2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -51,6 +51,16 @@ Ans: Yes, you can contact the WPML team. They offer translation service via thir
 nothing here
 
 == Changelog ==
+
+v1.1.11 -> Sep 30, 2025
+---------------------------
+- **update:** Language switching support for vendor dashboard hash routing added.
+- **update:** Added support for zone_id and instance_id parameters for dokan shipping URL.
+
+v1.1.10 -> Aug 27, 2025
+---------------------------
+- **fix:** Settings submenu URL translation issue with language switcher.
+- **update:** Added WPML translation support for Dokan category-wise commission custom term fields.
 
 v1.1.9 -> Feb 28, 2025
 ---------------------------
