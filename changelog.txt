@@ -1,3 +1,8 @@
+v1.1.11 -> Sep 30, 2025
+---------------------------
+- **update:** Language switching support for vendor dashboard hash routing added.
+- **update:** Added support for zone_id and instance_id parameters for dokan shipping URL.
+
 v1.1.10 -> Aug 27, 2025
 ---------------------------
 - **fix:** Settings submenu URL translation issue with language switcher.
