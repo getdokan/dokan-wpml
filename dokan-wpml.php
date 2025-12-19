@@ -49,6 +49,12 @@ defined( 'ABSPATH' ) || exit;
  * @class Dokan_WPML The class that holds the entire Dokan_WPML plugin
  */
 class Dokan_WPML {
+    /*
+     * Cached options
+     *
+     * @var array
+     */
+    private $cached_options = [];
 
     /*
      * WordPress Endpoints text domain
@@ -1005,16 +1011,25 @@ class Dokan_WPML {
      * @return mixed
      */
     public function get_raw_option( $option, $section, $default = '' ) {
+        $cache_key = $section . '_' . $option;
+
+        if ( isset( $this->cached_options[$cache_key] ) ) {
+            return $this->cached_options[$cache_key];
+        }
+
         if ( ! class_exists( 'WPML_Multilingual_Options_Utils' ) ) {
             return dokan_get_option( $option, $section, $default );
         }
 
         global $wpdb;
-
         $util    = new WPML_Multilingual_Options_Utils( $wpdb );
         $options = $util->get_option_without_filtering( $section );
 
-        return isset( $options[ $option ] ) ? $options[ $option ] : $default;
+        $result = isset( $options[$option] ) ? $options[$option] : $default;
+
+        $this->cached_options[$cache_key] = $result;
+
+        return $result;
     }
 
     /**
