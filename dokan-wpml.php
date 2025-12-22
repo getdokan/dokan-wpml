@@ -89,6 +89,11 @@ class Dokan_WPML {
 
 		// load all actions and filter under plugins loaded hooks
 	    add_action( 'plugins_loaded', [ $this, 'plugins_loaded' ] );
+
+        // Clear option cache on option updates, additions, deletions
+        add_action( 'updated_option', [ $this, 'clear_option_cache' ], 10, 3 );
+        add_action( 'added_option', [ $this, 'clear_option_cache' ], 10, 3 );
+        add_action( 'deleted_option', [ $this, 'clear_option_cache' ], 10, 3 );
     }
 
     /**
@@ -213,6 +218,21 @@ class Dokan_WPML {
 
         add_action( 'wp_enqueue_scripts', [ $this, 'enqueue' ] );
 	}
+    
+    /**
+     * Clear cache when option is updated, added, or deleted
+     * This function accepts variable parameters to work with all three hooks
+     * 
+     * @param string $option_name Name of the option
+     * @param mixed  $param2      Old value (for updated_option) or value (for added_option) - optional
+     * @param mixed  $param3      New value (for updated_option) - optional
+     */
+    public function clear_option_cache( $option, $param2 = null, $param3 = null ) {
+        // Clear only if dokan_pages option is affected
+        if ( $option === 'dokan_pages' ) {
+           $this->cached_options = [];
+        }
+    }
 
 	/**
 	 * Initialize the plugin tracker
