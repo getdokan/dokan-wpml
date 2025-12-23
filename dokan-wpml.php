@@ -54,7 +54,7 @@ class Dokan_WPML {
      *
      * @var array
      */
-    private $cached_options = [];
+    private static $cached_options = [];
 
     /*
      * WordPress Endpoints text domain
@@ -91,9 +91,9 @@ class Dokan_WPML {
 	    add_action( 'plugins_loaded', [ $this, 'plugins_loaded' ] );
 
         // Clear option cache on option updates, additions, deletions
-        add_action( 'updated_option', [ $this, 'clear_option_cache' ], 10, 3 );
-        add_action( 'added_option', [ $this, 'clear_option_cache' ], 10, 3 );
-        add_action( 'deleted_option', [ $this, 'clear_option_cache' ], 10, 3 );
+        add_action( 'updated_option', [ $this, 'clear_option_cache' ] );
+        add_action( 'added_option', [ $this, 'clear_option_cache' ] );
+        add_action( 'deleted_option', [ $this, 'clear_option_cache' ] );
     }
 
     /**
@@ -223,15 +223,19 @@ class Dokan_WPML {
      * Clear cache when option is updated, added, or deleted
      * This function accepts variable parameters to work with all three hooks
      * 
-     * @param string $option_name Name of the option
-     * @param mixed  $param2      Old value (for updated_option) or value (for added_option) - optional
-     * @param mixed  $param3      New value (for updated_option) - optional
+     * @since 1.1.13
+     * 
+     * @param string $option Name of the option
+     * 
+     * @return void
      */
-    public function clear_option_cache( $option, $param2 = null, $param3 = null ) {
-        // Clear only if dokan_pages option is affected
-        if ( $option === 'dokan_pages' ) {
-           $this->cached_options = [];
+    public function clear_option_cache( $option ) {
+        // Clear only if dokan_pages option is affected.
+        if ( empty( self::$cached_options[ $option ] ) ) {
+            return;
         }
+
+        unset( self::$cached_options[ $option ] );
     }
 
 	/**
@@ -588,6 +592,7 @@ class Dokan_WPML {
      */
     public function get_dokan_url_for_language( $language, $name = '' ) {
         $post_id      = $this->get_raw_option( 'dashboard', 'dokan_pages' );
+        error_log('Post ID: ' . $post_id);
         $lang_post_id = '';
 
         if ( function_exists( 'wpml_object_id_filter' ) ) {
@@ -1031,10 +1036,8 @@ class Dokan_WPML {
      * @return mixed
      */
     public function get_raw_option( $option, $section, $default = '' ) {
-        $cache_key = $section . '_' . $option;
-
-        if ( isset( $this->cached_options[$cache_key] ) ) {
-            return $this->cached_options[$cache_key];
+        if ( isset( self::$cached_options[ $section ][ $option ] ) ) {
+            return self::$cached_options[ $section ][ $option ];
         }
 
         if ( ! class_exists( 'WPML_Multilingual_Options_Utils' ) ) {
@@ -1045,9 +1048,9 @@ class Dokan_WPML {
         $util    = new WPML_Multilingual_Options_Utils( $wpdb );
         $options = $util->get_option_without_filtering( $section );
 
-        $result = isset( $options[$option] ) ? $options[$option] : $default;
+        $result = $options[ $option ] ?? $default;
 
-        $this->cached_options[$cache_key] = $result;
+        self::$cached_options[ $section ][ $option ] = $result;
 
         return $result;
     }
