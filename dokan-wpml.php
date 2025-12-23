@@ -592,7 +592,6 @@ class Dokan_WPML {
      */
     public function get_dokan_url_for_language( $language, $name = '' ) {
         $post_id      = $this->get_raw_option( 'dashboard', 'dokan_pages' );
-        error_log('Post ID: ' . $post_id);
         $lang_post_id = '';
 
         if ( function_exists( 'wpml_object_id_filter' ) ) {
