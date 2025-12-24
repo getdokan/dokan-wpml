@@ -50,7 +50,7 @@ defined( 'ABSPATH' ) || exit;
  */
 class Dokan_WPML {
     /*
-     * Cached options
+     * Cached options.
      *
      * @var array
      */
@@ -220,8 +220,8 @@ class Dokan_WPML {
 	}
     
     /**
-     * Clear cache when option is updated, added, or deleted
-     * This function accepts variable parameters to work with all three hooks
+     * Clear cache when option is updated, added, or deleted.
+     * This function accepts variable parameters to work with all three hooks.
      * 
      * @since 1.1.13
      * 
@@ -230,7 +230,7 @@ class Dokan_WPML {
      * @return void
      */
     public function clear_option_cache( $option ) {
-        // Clear only if dokan_pages option is affected.
+        // Clear only if the option exists in cache.
         if ( empty( self::$cached_options[ $option ] ) ) {
             return;
         }
