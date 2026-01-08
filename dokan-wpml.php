@@ -3,7 +3,7 @@
  * Plugin Name: Dokan - WPML Integration
  * Plugin URI: https://wedevs.com/
  * Description: WPML and Dokan compatible package
- * Version: 1.1.12
+ * Version: 1.1.13
  * Author: weDevs
  * Author URI: https://wedevs.com/
  * Text Domain: dokan-wpml
@@ -49,6 +49,12 @@ defined( 'ABSPATH' ) || exit;
  * @class Dokan_WPML The class that holds the entire Dokan_WPML plugin
  */
 class Dokan_WPML {
+    /*
+     * Cached options.
+     *
+     * @var array
+     */
+    private static $cached_options = [];
 
     /*
      * WordPress Endpoints text domain
@@ -83,6 +89,11 @@ class Dokan_WPML {
 
 		// load all actions and filter under plugins loaded hooks
 	    add_action( 'plugins_loaded', [ $this, 'plugins_loaded' ] );
+
+        // Clear option cache on option updates, additions, deletions
+        add_action( 'updated_option', [ $this, 'clear_option_cache' ] );
+        add_action( 'added_option', [ $this, 'clear_option_cache' ] );
+        add_action( 'deleted_option', [ $this, 'clear_option_cache' ] );
     }
 
     /**
@@ -207,6 +218,25 @@ class Dokan_WPML {
 
         add_action( 'wp_enqueue_scripts', [ $this, 'enqueue' ] );
 	}
+    
+    /**
+     * Clear cache when option is updated, added, or deleted.
+     * This function accepts variable parameters to work with all three hooks.
+     * 
+     * @since 1.1.13
+     * 
+     * @param string $option Name of the option
+     * 
+     * @return void
+     */
+    public function clear_option_cache( $option ) {
+        // Clear only if the option exists in cache.
+        if ( empty( self::$cached_options[ $option ] ) ) {
+            return;
+        }
+
+        unset( self::$cached_options[ $option ] );
+    }
 
 	/**
 	 * Initialize the plugin tracker
@@ -1005,16 +1035,23 @@ class Dokan_WPML {
      * @return mixed
      */
     public function get_raw_option( $option, $section, $default = '' ) {
+        if ( isset( self::$cached_options[ $section ][ $option ] ) ) {
+            return self::$cached_options[ $section ][ $option ];
+        }
+
         if ( ! class_exists( 'WPML_Multilingual_Options_Utils' ) ) {
             return dokan_get_option( $option, $section, $default );
         }
 
         global $wpdb;
-
         $util    = new WPML_Multilingual_Options_Utils( $wpdb );
         $options = $util->get_option_without_filtering( $section );
 
-        return isset( $options[ $option ] ) ? $options[ $option ] : $default;
+        $result = $options[ $option ] ?? $default;
+
+        self::$cached_options[ $section ][ $option ] = $result;
+
+        return $result;
     }
 
     /**
