@@ -1911,14 +1911,21 @@ class Dokan_WPML {
             return $url; // Return early if URL or language code is empty
         }
 
+        // Get language negotiation type
+        $language_negotiation_type = (int) apply_filters( 'wpml_setting', 1, 'language_negotiation_type' );
+            
+        // For domain-based language negotiation (type 2), WPML handles URLs correctly.
+        // This filter should not modify URLs in domain mode as it breaks the URL structure.
+        if ( WPML_LANGUAGE_NEGOTIATION_TYPE_DOMAIN === $language_negotiation_type ) {
+            return $url;
+        }
         // Get home URL without WPML modifications.
         $this->disable_url_translation();
         $home_url = home_url();
         $this->enable_url_translation();
 
-        // Get language negotiation type and build base URL
+        // Get default language code and check if the negotiation type is parameter-based.
         $default_language_code     = wpml_get_default_language();
-        $language_negotiation_type = (int) apply_filters( 'wpml_setting', 1, 'language_negotiation_type' );
         $is_parameter_based        = ( WPML_LANGUAGE_NEGOTIATION_TYPE_PARAMETER === $language_negotiation_type );
 
         // If the language negotiation type is parameter-based, we need to use the home URL as the base URL.
