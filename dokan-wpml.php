@@ -1923,6 +1923,9 @@ class Dokan_WPML {
 
         // Extract path from URL
         $parsed_url = parse_url( $url );
+        if ( ! is_array( $parsed_url ) ) {
+            return $url;
+        }
         $url_path   = isset( $parsed_url['path'] ) ? trim( $parsed_url['path'], '/' ) : '';
         
         // Build base URL based on negotiation type
