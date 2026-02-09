@@ -1931,7 +1931,8 @@ class Dokan_WPML {
             if ( ! empty( $domain_info[ $lang_code ] ) ) {
                 $base_url = $domain_info[ $lang_code ];
                 if ( ! preg_match( '#^https?://#i', $base_url ) ) {
-                    $base_url = 'https://' . $base_url;
+                    $scheme   = wp_parse_url( $home_url, PHP_URL_SCHEME ) ?: 'https';
+                    $base_url = $scheme . '://' . $base_url;
                 }
             } else {
                 return $url;
@@ -1966,6 +1967,8 @@ class Dokan_WPML {
         $path_segments       = explode( '/', $url_path );
         $translated_segments = $this->translate_path_segments( $path_segments, $lang_code );
         $language_switcher_url = untrailingslashit( $base_url ) . '/' . implode( '/', $translated_segments );
+        // Apply WordPress trailing slash rules based on permalink structure
+        $language_switcher_url = user_trailingslashit( $language_switcher_url );
 
         // If the language negotiation type is parameter-based, append the language code as a query parameter.
         if ( $is_parameter_based ) {
