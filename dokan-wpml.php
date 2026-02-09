@@ -1908,7 +1908,7 @@ class Dokan_WPML {
     public function filter_language_switcher_url( $url, $lang ) {
         $lang_code = $lang['code'] ?? '';
         if ( empty( $url ) || empty( $lang_code ) ) {
-            return $url;
+            return $url; // Return early if URL or language code is empty
         }
 
         // Get language negotiation type
@@ -1967,9 +1967,12 @@ class Dokan_WPML {
         $translated_segments = $this->translate_path_segments( $path_segments, $lang_code );
         $language_switcher_url = untrailingslashit( $base_url ) . '/' . implode( '/', $translated_segments );
 
-        // Add language parameter for parameter-based negotiation
+        // If the language negotiation type is parameter-based, append the language code as a query parameter.
         if ( $is_parameter_based ) {
-            $language_switcher_url = add_query_arg( [ 'lang' => $lang_code ], $language_switcher_url );
+            $language_switcher_url = add_query_arg(
+                [ 'lang' => $lang_code ],
+                $language_switcher_url
+            );
         }
 
         return apply_filters(
