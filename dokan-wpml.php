@@ -1908,54 +1908,68 @@ class Dokan_WPML {
     public function filter_language_switcher_url( $url, $lang ) {
         $lang_code = $lang['code'] ?? '';
         if ( empty( $url ) || empty( $lang_code ) ) {
-            return $url; // Return early if URL or language code is empty
+            return $url;
         }
 
         // Get language negotiation type
         $language_negotiation_type = (int) apply_filters( 'wpml_setting', 1, 'language_negotiation_type' );
-            
-        // For domain-based language negotiation (type 2), WPML handles URLs correctly.
-        // This filter should not modify URLs in domain mode as it breaks the URL structure.
-        if ( WPML_LANGUAGE_NEGOTIATION_TYPE_DOMAIN === $language_negotiation_type ) {
-            return $url;
-        }
-        // Get home URL without WPML modifications.
+        $is_parameter_based        = ( WPML_LANGUAGE_NEGOTIATION_TYPE_PARAMETER === $language_negotiation_type );
+        $is_domain_based           = ( WPML_LANGUAGE_NEGOTIATION_TYPE_DOMAIN === $language_negotiation_type );
+        
+        // Get home URL without WPML modifications
         $this->disable_url_translation();
         $home_url = home_url();
         $this->enable_url_translation();
 
-        // Get default language code and check if the negotiation type is parameter-based.
-        $default_language_code     = wpml_get_default_language();
-        $is_parameter_based        = ( WPML_LANGUAGE_NEGOTIATION_TYPE_PARAMETER === $language_negotiation_type );
-
-        // If the language negotiation type is parameter-based, we need to use the home URL as the base URL.
-        if ( ! $is_parameter_based && $default_language_code !== $lang_code ) {
-            $base_url = trailingslashit( $home_url ) . $lang_code;
-        } else {
+        // Extract path from URL
+        $parsed_url = parse_url( $url );
+        $url_path   = isset( $parsed_url['path'] ) ? trim( $parsed_url['path'], '/' ) : '';
+        
+        // Build base URL based on negotiation type
+        if ( $is_domain_based ) {
+            $domain_info = apply_filters( 'wpml_setting', [], 'language_domains' );
+            if ( ! empty( $domain_info[ $lang_code ] ) ) {
+                $base_url = $domain_info[ $lang_code ];
+                if ( ! preg_match( '#^https?://#i', $base_url ) ) {
+                    $base_url = 'https://' . $base_url;
+                }
+            } else {
+                return $url;
+            }
+        } elseif ( $is_parameter_based ) {
             $base_url = $home_url;
+            // Remove query parameters from path
+            if ( strpos( $url_path, '?' ) !== false ) {
+                $url_path = explode( '?', $url_path, 2 )[0];
+            }
+        } else {
+            // Directory-based
+            $default_language_code = wpml_get_default_language();
+            if ( $default_language_code !== $lang_code ) {
+                $base_url = trailingslashit( $home_url ) . $lang_code;
+            } else {
+                $base_url = $home_url;
+            }
+            // Remove base URL from path for directory-based
+            $url_path = trim( str_replace( $base_url, '', $url ), '/' );
         }
 
-        // Remove query parameters for parameter-based negotiation.
-        $url_path = trim( str_replace( $base_url, '', $url ), '/' );
-        if ( $is_parameter_based && strpos( $url_path, '?' ) !== false ) {
-            $url_path = explode( '?', $url_path, 2 )[0];
-        }
-
+        // Handle empty path
         if ( empty( $url_path ) ) {
-            return $url;
+            if ( $is_parameter_based ) {
+                return add_query_arg( [ 'lang' => $lang_code ], trailingslashit( $base_url ) );
+            }
+            return trailingslashit( $base_url );
         }
 
-        // Translate path segments to the target language.
-        $path_segments         = explode( '/', $url_path );
-        $translated_segments   = $this->translate_path_segments( $path_segments, $lang_code );
-        $language_switcher_url = trailingslashit( $base_url ) . trailingslashit( implode( '/', $translated_segments ) );
+        // Translate path segments
+        $path_segments       = explode( '/', $url_path );
+        $translated_segments = $this->translate_path_segments( $path_segments, $lang_code );
+        $language_switcher_url = untrailingslashit( $base_url ) . '/' . implode( '/', $translated_segments );
 
-        // If the language negotiation type is parameter-based, append the language code as a query parameter.
+        // Add language parameter for parameter-based negotiation
         if ( $is_parameter_based ) {
-            $language_switcher_url = add_query_arg(
-                [ 'lang' => $lang_code ],
-                $language_switcher_url
-            );
+            $language_switcher_url = add_query_arg( [ 'lang' => $lang_code ], $language_switcher_url );
         }
 
         return apply_filters(
