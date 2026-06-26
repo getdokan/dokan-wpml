@@ -84,6 +84,11 @@ class Dokan_WPML {
     public function __construct() {
         register_activation_hook( __FILE__, [ $this, 'dependency_missing_notice' ] );
 
+        // Declare WooCommerce feature compatibility (HPOS, cart/checkout blocks).
+        // Registered here — not inside the dependency-gated plugins_loaded() —
+        // so the declaration always runs even when WPML is inactive.
+        add_action( 'before_woocommerce_init', [ $this, 'declare_woocommerce_feature_compatibility' ] );
+
         // Localize our plugin
         add_action( 'init', [ $this, 'localization_setup' ] );
 
@@ -126,7 +131,6 @@ class Dokan_WPML {
 
 		// load appsero tracker
 		$this->appsero_init_tracker();
-        add_action( 'before_woocommerce_init', [ $this, 'declare_woocommerce_feature_compatibility' ] );
 
 		// Load all actions hook
 		add_filter( 'dokan_forced_load_scripts', [ $this, 'load_scripts_and_style' ] );
