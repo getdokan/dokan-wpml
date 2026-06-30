@@ -1908,91 +1908,41 @@ class Dokan_WPML {
     public function filter_language_switcher_url( $url, $lang ) {
         $lang_code = $lang['code'] ?? '';
         if ( empty( $url ) || empty( $lang_code ) ) {
-            return $url; // Return early if URL or language code is empty
+            return $url; // Return early if URL or language code is empty.
         }
 
-        // Get language negotiation type
-        $language_negotiation_type = (int) apply_filters( 'wpml_setting', 1, 'language_negotiation_type' );
-        $is_parameter_based        = false;
-        $is_domain_based           = false;
-        if ( defined( 'WPML_LANGUAGE_NEGOTIATION_TYPE_PARAMETER' ) && defined( 'WPML_LANGUAGE_NEGOTIATION_TYPE_DOMAIN' ) ) {
-            $is_parameter_based = ( WPML_LANGUAGE_NEGOTIATION_TYPE_PARAMETER === $language_negotiation_type );
-            $is_domain_based    = ( WPML_LANGUAGE_NEGOTIATION_TYPE_DOMAIN === $language_negotiation_type );
+        $parsed_url = wp_parse_url( $url );
+        if ( ! is_array( $parsed_url ) || empty( $parsed_url['path'] ) ) {
+            return $url; // Nothing to translate (e.g. home URL).
         }
 
-        // Get home URL without WPML modifications
-        $this->disable_url_translation();
-        $home_url = home_url();
-        $this->enable_url_translation();
+        // WPML has already encoded the correct scheme/host/lang-prefix/query for the
+        // target language. We only need to translate the Dokan endpoint path segments;
+        // unrecognised segments (lang code, store names, page slugs) pass through unchanged.
+        $segments            = explode( '/', trim( $parsed_url['path'], '/' ) );
+        $translated_segments = $this->translate_path_segments( $segments, $lang_code );
 
-        // Extract path from URL
-        $parsed_url = parse_url( $url );
-        if ( ! is_array( $parsed_url ) ) {
-            return $url;
-        }
-        $url_path   = isset( $parsed_url['path'] ) ? trim( $parsed_url['path'], '/' ) : '';
-        
-        // Build base URL based on negotiation type
-        if ( $is_domain_based ) {
-            $domain_info = apply_filters( 'wpml_setting', [], 'language_domains' );
-            if ( ! empty( $domain_info[ $lang_code ] ) ) {
-                $base_url = $domain_info[ $lang_code ];
-                if ( ! preg_match( '#^https?://#i', $base_url ) ) {
-                    $scheme   = wp_parse_url( $home_url, PHP_URL_SCHEME ) ?: 'https';
-                    $base_url = $scheme . '://' . $base_url;
-                }
-            } else {
-                return $url;
-            }
-        } elseif ( $is_parameter_based ) {
-            $base_url = $home_url;
-        } else {
-            // Directory-based
-            $default_language_code = wpml_get_default_language();
-            if ( $default_language_code !== $lang_code ) {
-                $base_url = trailingslashit( $home_url ) . $lang_code;
-            } else {
-                $base_url = $home_url;
-            }
-            // Remove the language directory prefix from the already-parsed path.
-            // Using $parsed_url['path'] (via $url_path) keeps any query string out of the segments.
-            $base_path = trim( (string) wp_parse_url( $base_url, PHP_URL_PATH ), '/' );
-            if ( '' !== $base_path && strpos( $url_path, $base_path ) === 0 ) {
-                $url_path = trim( substr( $url_path, strlen( $base_path ) ), '/' );
-            }
+        // Rebuild the path, preserving the original trailing-slash behaviour.
+        $translated_path = '/' . implode( '/', $translated_segments );
+        if ( '/' === substr( $parsed_url['path'], -1 ) ) {
+            $translated_path = trailingslashit( $translated_path );
         }
 
-        // Handle empty path
-        if ( empty( $url_path ) ) {
-            $base_url = trailingslashit( $base_url );
+        // Reassemble using the original (WPML-provided) components.
+        $scheme = isset( $parsed_url['scheme'] ) ? $parsed_url['scheme'] . '://' : '//';
+        $host   = $parsed_url['host'] ?? '';
+        $port   = isset( $parsed_url['port'] ) ? ':' . $parsed_url['port'] : '';
+        $query  = isset( $parsed_url['query'] ) ? '?' . $parsed_url['query'] : '';
 
-            return $is_parameter_based
-                ? add_query_arg( [ 'lang' => $lang_code ], $base_url )
-                : $base_url;
-        }
-
-        // Translate path segments
-        $path_segments       = explode( '/', $url_path );
-        $translated_segments = $this->translate_path_segments( $path_segments, $lang_code );
-        $language_switcher_url = untrailingslashit( $base_url ) . '/' . implode( '/', $translated_segments );
-        // Apply WordPress trailing slash rules based on permalink structure
-        $language_switcher_url = user_trailingslashit( $language_switcher_url );
-
-        // If the language negotiation type is parameter-based, append the language code as a query parameter.
-        if ( $is_parameter_based ) {
-            $language_switcher_url = add_query_arg(
-                [ 'lang' => $lang_code ],
-                $language_switcher_url
-            );
-        }
+        $language_switcher_url = $scheme . $host . $port . $translated_path . $query;
 
         return apply_filters(
             'dokan_wpml_get_language_switcher_url',
             $language_switcher_url,
-            $path_segments,
+            $segments,
             $translated_segments,
             $lang,
-            $base_url
+            $url
         );
     }
 
