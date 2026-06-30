@@ -1946,10 +1946,6 @@ class Dokan_WPML {
             }
         } elseif ( $is_parameter_based ) {
             $base_url = $home_url;
-            // Remove query parameters from path
-            if ( strpos( $url_path, '?' ) !== false ) {
-                $url_path = explode( '?', $url_path, 2 )[0];
-            }
         } else {
             // Directory-based
             $default_language_code = wpml_get_default_language();
@@ -1968,10 +1964,11 @@ class Dokan_WPML {
 
         // Handle empty path
         if ( empty( $url_path ) ) {
-            if ( $is_parameter_based ) {
-                return add_query_arg( [ 'lang' => $lang_code ], trailingslashit( $base_url ) );
-            }
-            return trailingslashit( $base_url );
+            $base_url = trailingslashit( $base_url );
+
+            return $is_parameter_based
+                ? add_query_arg( [ 'lang' => $lang_code ], $base_url )
+                : $base_url;
         }
 
         // Translate path segments
