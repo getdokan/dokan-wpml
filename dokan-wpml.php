@@ -1913,9 +1913,13 @@ class Dokan_WPML {
 
         // Get language negotiation type
         $language_negotiation_type = (int) apply_filters( 'wpml_setting', 1, 'language_negotiation_type' );
-        $is_parameter_based        = ( WPML_LANGUAGE_NEGOTIATION_TYPE_PARAMETER === $language_negotiation_type );
-        $is_domain_based           = ( WPML_LANGUAGE_NEGOTIATION_TYPE_DOMAIN === $language_negotiation_type );
-        
+        $is_parameter_based        = false;
+        $is_domain_based           = false;
+        if ( defined( 'WPML_LANGUAGE_NEGOTIATION_TYPE_PARAMETER' ) && defined( 'WPML_LANGUAGE_NEGOTIATION_TYPE_DOMAIN' ) ) {
+            $is_parameter_based = ( WPML_LANGUAGE_NEGOTIATION_TYPE_PARAMETER === $language_negotiation_type );
+            $is_domain_based    = ( WPML_LANGUAGE_NEGOTIATION_TYPE_DOMAIN === $language_negotiation_type );
+        }
+
         // Get home URL without WPML modifications
         $this->disable_url_translation();
         $home_url = home_url();
@@ -1954,8 +1958,12 @@ class Dokan_WPML {
             } else {
                 $base_url = $home_url;
             }
-            // Remove base URL from path for directory-based
-            $url_path = trim( str_replace( $base_url, '', $url ), '/' );
+            // Remove the language directory prefix from the already-parsed path.
+            // Using $parsed_url['path'] (via $url_path) keeps any query string out of the segments.
+            $base_path = trim( (string) wp_parse_url( $base_url, PHP_URL_PATH ), '/' );
+            if ( '' !== $base_path && strpos( $url_path, $base_path ) === 0 ) {
+                $url_path = trim( substr( $url_path, strlen( $base_path ) ), '/' );
+            }
         }
 
         // Handle empty path
