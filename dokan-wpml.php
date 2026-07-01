@@ -1916,14 +1916,43 @@ class Dokan_WPML {
             return $url; // Nothing to translate (e.g. home URL).
         }
 
-        // WPML has already encoded the correct scheme/host/lang-prefix/query for the
-        // target language. We only need to translate the Dokan endpoint path segments;
-        // unrecognised segments (lang code, store names, page slugs) pass through unchanged.
-        $segments            = explode( '/', trim( $parsed_url['path'], '/' ) );
+        // Resolve the WordPress install path (e.g. "store" for a subdirectory install)
+        // without WPML's language modifications. It must never be treated as a translatable
+        // slug, otherwise a subdirectory whose name collides with an endpoint slug (such as
+        // Dokan's default "store") would be rewritten and 404.
+        $this->disable_url_translation();
+        $home_path = trim( (string) wp_parse_url( home_url(), PHP_URL_PATH ), '/' );
+        $this->enable_url_translation();
+
+        $path     = trim( $parsed_url['path'], '/' );
+        $segments = '' === $path ? [] : explode( '/', $path );
+
+        // Split off the leading segments that must be kept verbatim: the install
+        // subdirectory and the language directory prefix (directory-based negotiation).
+        $preserved = [];
+
+        if ( '' !== $home_path ) {
+            $home_segments = explode( '/', $home_path );
+            if ( array_slice( $segments, 0, count( $home_segments ) ) === $home_segments ) {
+                $preserved = $home_segments;
+                $segments  = array_slice( $segments, count( $home_segments ) );
+            }
+        }
+
+        if ( isset( $segments[0] ) && $segments[0] === $lang_code ) {
+            $preserved[] = $lang_code;
+            array_shift( $segments );
+        }
+
+        // WPML has already encoded the correct scheme/host/lang-prefix/query for the target
+        // language; we only translate the remaining Dokan endpoint path segments.
         $translated_segments = $this->translate_path_segments( $segments, $lang_code );
 
+        $path_segments  = array_merge( $preserved, $segments );            // original, full path
+        $final_segments = array_merge( $preserved, $translated_segments ); // translated, full path
+
         // Rebuild the path, preserving the original trailing-slash behaviour.
-        $translated_path = '/' . implode( '/', $translated_segments );
+        $translated_path = '/' . implode( '/', $final_segments );
         if ( '/' === substr( $parsed_url['path'], -1 ) ) {
             $translated_path = trailingslashit( $translated_path );
         }
@@ -1939,8 +1968,8 @@ class Dokan_WPML {
         return apply_filters(
             'dokan_wpml_get_language_switcher_url',
             $language_switcher_url,
-            $segments,
-            $translated_segments,
+            $path_segments,
+            $final_segments,
             $lang,
             $url
         );
