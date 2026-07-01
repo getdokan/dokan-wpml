@@ -339,9 +339,13 @@ class Dokan_WPML {
         // every other dashboard menu item so its (translated) rewrite rule resolves — a literal
         // `new` has no rewrite on translated pages and 404s. The `#<route>` hash, however, is a
         // client-side React route hardcoded in the JS bundle, so it is kept verbatim.
+        //
+        // Build the base via get_dokan_url_for_language() with the translated endpoint as the
+        // path segment so the query string (parameter-based mode) and host (domain-based mode)
+        // are assembled correctly — plain string concatenation would misplace them.
         if ( $new_url && ! empty( $name ) ) {
             $translated_new = $this->translate_endpoint( 'new', $current_lang );
-            return trailingslashit( $this->get_dokan_url_for_language( ICL_LANGUAGE_CODE ) ) . $translated_new . '/#' . $name . '/';
+            return $this->get_dokan_url_for_language( ICL_LANGUAGE_CODE, $translated_new . '/' ) . '#' . $name . '/';
         }
 
         if ( ! empty( $name ) ) {
