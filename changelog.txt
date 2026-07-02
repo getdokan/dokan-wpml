@@ -1,3 +1,9 @@
+v1.1.14 -> Jul 02, 2026
+---------------------------
+- **fix:** Corrected broken language switcher URLs when WPML uses a different domain per language.
+- **fix:** Fixed the plugin being marked as incompatible with WooCommerce features (HPOS and cart & checkout blocks).
+- **fix:** Corrected vendor dashboard navigation URLs for the new UI when WPML is active.
+
 v1.1.13 -> Jan 08, 2026
 ---------------------------
 - **fix:** Resolved vendor dashboard queries duplication for Dokan WPML.

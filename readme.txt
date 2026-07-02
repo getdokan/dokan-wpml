@@ -7,7 +7,7 @@ Tested up to: 6.8.2
 WC requires at least: 8.5.0
 WC tested up to: 10.2.2
 Requires PHP: 7.4
-Stable tag: 1.1.13
+Stable tag: 1.1.14
 License: GPL v2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -51,6 +51,12 @@ Ans: Yes, you can contact the WPML team. They offer translation service via thir
 nothing here
 
 == Changelog ==
+
+v1.1.14 -> Jul 02, 2026
+---------------------------
+- **fix:** Corrected broken language switcher URLs when WPML uses a different domain per language.
+- **fix:** Fixed the plugin being marked as incompatible with WooCommerce features (HPOS and cart & checkout blocks).
+- **fix:** Corrected vendor dashboard navigation URLs for the new UI when WPML is active.
 
 v1.1.13 -> Jan 08, 2026
 ---------------------------
