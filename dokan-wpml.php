@@ -146,7 +146,7 @@ class Dokan_WPML {
         add_filter('sanitize_user_meta_product_package_id', [ $this, 'set_subscription_pack_id_in_base_language' ], 10, 3 );
         add_filter('dokan_vendor_subscription_package_title', [ $this, 'vendor_subscription_pack_title_translation' ], 10, 2 );
         add_filter('dokan_vendor_subscription_package_id', [ $this, 'get_product_id_in_base_language' ] );
-		add_filter( 'dokan_get_navigation_url', [ $this, 'load_translated_url' ], 10, 2 );
+		add_filter( 'dokan_get_navigation_url', [ $this, 'load_translated_url' ], 10, 3 );
 		add_filter( 'body_class', [ $this, 'add_dashboard_template_class_if_wpml' ], 99 );
 		add_filter( 'dokan_get_current_page_id', [ $this, 'dokan_set_current_page_id' ] );
 		add_filter( 'dokan_get_translated_page_id', [ $this, 'dokan_get_translated_page_id' ] );
@@ -328,11 +328,24 @@ class Dokan_WPML {
      *
      * @return string
      */
-    public function load_translated_url( $url, $name ) {
+    public function load_translated_url( $url, $name, $new_url = false ) {
         $current_lang = apply_filters( 'wpml_current_language', null );
 
         if ( ! function_exists( 'wpml_object_id_filter' ) ) {
             return $url;
+        }
+
+        // New (React) vendor dashboard UI. The `new` host endpoint must be translated like
+        // every other dashboard menu item so its (translated) rewrite rule resolves — a literal
+        // `new` has no rewrite on translated pages and 404s. The `#<route>` hash, however, is a
+        // client-side React route hardcoded in the JS bundle, so it is kept verbatim.
+        //
+        // Build the base via get_dokan_url_for_language() with the translated endpoint as the
+        // path segment so the query string (parameter-based mode) and host (domain-based mode)
+        // are assembled correctly — plain string concatenation would misplace them.
+        if ( $new_url && ! empty( $name ) ) {
+            $translated_new = $this->translate_endpoint( 'new', $current_lang );
+            return $this->get_dokan_url_for_language( ICL_LANGUAGE_CODE, $translated_new . '/' ) . '#' . $name . '/';
         }
 
         if ( ! empty( $name ) ) {
@@ -1269,7 +1282,7 @@ class Dokan_WPML {
 		}
 
 		add_filter( 'dokan_get_page_url', [ self::init(), 'reflect_page_url' ], 10, 4 );
-		add_filter( 'dokan_get_navigation_url', [ self::init(), 'load_translated_url' ], 10, 2 );
+		add_filter( 'dokan_get_navigation_url', [ self::init(), 'load_translated_url' ], 10, 3 );
 	}
 
     /**
