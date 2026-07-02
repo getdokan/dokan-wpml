@@ -3,7 +3,7 @@
  * Plugin Name: Dokan - WPML Integration
  * Plugin URI: https://wedevs.com/
  * Description: WPML and Dokan compatible package
- * Version: 1.1.13
+ * Version: 1.1.14
  * Author: weDevs
  * Author URI: https://wedevs.com/
  * Text Domain: dokan-wpml
@@ -84,6 +84,11 @@ class Dokan_WPML {
     public function __construct() {
         register_activation_hook( __FILE__, [ $this, 'dependency_missing_notice' ] );
 
+        // Declare WooCommerce feature compatibility (HPOS, cart/checkout blocks).
+        // Registered here — not inside the dependency-gated plugins_loaded() —
+        // so the declaration always runs even when WPML is inactive.
+        add_action( 'before_woocommerce_init', [ $this, 'declare_woocommerce_feature_compatibility' ] );
+
         // Localize our plugin
         add_action( 'init', [ $this, 'localization_setup' ] );
 
@@ -126,7 +131,6 @@ class Dokan_WPML {
 
 		// load appsero tracker
 		$this->appsero_init_tracker();
-        add_action( 'before_woocommerce_init', [ $this, 'declare_woocommerce_feature_compatibility' ] );
 
 		// Load all actions hook
 		add_filter( 'dokan_forced_load_scripts', [ $this, 'load_scripts_and_style' ] );
@@ -142,7 +146,7 @@ class Dokan_WPML {
         add_filter('sanitize_user_meta_product_package_id', [ $this, 'set_subscription_pack_id_in_base_language' ], 10, 3 );
         add_filter('dokan_vendor_subscription_package_title', [ $this, 'vendor_subscription_pack_title_translation' ], 10, 2 );
         add_filter('dokan_vendor_subscription_package_id', [ $this, 'get_product_id_in_base_language' ] );
-		add_filter( 'dokan_get_navigation_url', [ $this, 'load_translated_url' ], 10, 2 );
+		add_filter( 'dokan_get_navigation_url', [ $this, 'load_translated_url' ], 10, 3 );
 		add_filter( 'body_class', [ $this, 'add_dashboard_template_class_if_wpml' ], 99 );
 		add_filter( 'dokan_get_current_page_id', [ $this, 'dokan_set_current_page_id' ] );
 		add_filter( 'dokan_get_translated_page_id', [ $this, 'dokan_get_translated_page_id' ] );
@@ -324,11 +328,24 @@ class Dokan_WPML {
      *
      * @return string
      */
-    public function load_translated_url( $url, $name ) {
+    public function load_translated_url( $url, $name, $new_url = false ) {
         $current_lang = apply_filters( 'wpml_current_language', null );
 
         if ( ! function_exists( 'wpml_object_id_filter' ) ) {
             return $url;
+        }
+
+        // New (React) vendor dashboard UI. The `new` host endpoint must be translated like
+        // every other dashboard menu item so its (translated) rewrite rule resolves — a literal
+        // `new` has no rewrite on translated pages and 404s. The `#<route>` hash, however, is a
+        // client-side React route hardcoded in the JS bundle, so it is kept verbatim.
+        //
+        // Build the base via get_dokan_url_for_language() with the translated endpoint as the
+        // path segment so the query string (parameter-based mode) and host (domain-based mode)
+        // are assembled correctly — plain string concatenation would misplace them.
+        if ( $new_url && ! empty( $name ) ) {
+            $translated_new = $this->translate_endpoint( 'new', $current_lang );
+            return $this->get_dokan_url_for_language( ICL_LANGUAGE_CODE, $translated_new . '/' ) . '#' . $name . '/';
         }
 
         if ( ! empty( $name ) ) {
@@ -1265,7 +1282,7 @@ class Dokan_WPML {
 		}
 
 		add_filter( 'dokan_get_page_url', [ self::init(), 'reflect_page_url' ], 10, 4 );
-		add_filter( 'dokan_get_navigation_url', [ self::init(), 'load_translated_url' ], 10, 2 );
+		add_filter( 'dokan_get_navigation_url', [ self::init(), 'load_translated_url' ], 10, 3 );
 	}
 
     /**
@@ -1908,56 +1925,70 @@ class Dokan_WPML {
     public function filter_language_switcher_url( $url, $lang ) {
         $lang_code = $lang['code'] ?? '';
         if ( empty( $url ) || empty( $lang_code ) ) {
-            return $url; // Return early if URL or language code is empty
+            return $url; // Return early if URL or language code is empty.
         }
 
-        // Get home URL without WPML modifications.
+        $parsed_url = wp_parse_url( $url );
+        if ( ! is_array( $parsed_url ) || empty( $parsed_url['path'] ) ) {
+            return $url; // Nothing to translate (e.g. home URL).
+        }
+
+        // Resolve the WordPress install path (e.g. "store" for a subdirectory install)
+        // without WPML's language modifications. It must never be treated as a translatable
+        // slug, otherwise a subdirectory whose name collides with an endpoint slug (such as
+        // Dokan's default "store") would be rewritten and 404.
         $this->disable_url_translation();
-        $home_url = home_url();
+        $home_path = trim( (string) wp_parse_url( home_url(), PHP_URL_PATH ), '/' );
         $this->enable_url_translation();
 
-        // Get language negotiation type and build base URL
-        $default_language_code     = wpml_get_default_language();
-        $language_negotiation_type = (int) apply_filters( 'wpml_setting', 1, 'language_negotiation_type' );
-        $is_parameter_based        = ( WPML_LANGUAGE_NEGOTIATION_TYPE_PARAMETER === $language_negotiation_type );
+        $path     = trim( $parsed_url['path'], '/' );
+        $segments = '' === $path ? [] : explode( '/', $path );
 
-        // If the language negotiation type is parameter-based, we need to use the home URL as the base URL.
-        if ( ! $is_parameter_based && $default_language_code !== $lang_code ) {
-            $base_url = trailingslashit( $home_url ) . $lang_code;
-        } else {
-            $base_url = $home_url;
+        // Split off the leading segments that must be kept verbatim: the install
+        // subdirectory and the language directory prefix (directory-based negotiation).
+        $preserved = [];
+
+        if ( '' !== $home_path ) {
+            $home_segments = explode( '/', $home_path );
+            if ( array_slice( $segments, 0, count( $home_segments ) ) === $home_segments ) {
+                $preserved = $home_segments;
+                $segments  = array_slice( $segments, count( $home_segments ) );
+            }
         }
 
-        // Remove query parameters for parameter-based negotiation.
-        $url_path = trim( str_replace( $base_url, '', $url ), '/' );
-        if ( $is_parameter_based && strpos( $url_path, '?' ) !== false ) {
-            $url_path = explode( '?', $url_path, 2 )[0];
+        if ( isset( $segments[0] ) && $segments[0] === $lang_code ) {
+            $preserved[] = $lang_code;
+            array_shift( $segments );
         }
 
-        if ( empty( $url_path ) ) {
-            return $url;
+        // WPML has already encoded the correct scheme/host/lang-prefix/query for the target
+        // language; we only translate the remaining Dokan endpoint path segments.
+        $translated_segments = $this->translate_path_segments( $segments, $lang_code );
+
+        $path_segments  = array_merge( $preserved, $segments );            // original, full path
+        $final_segments = array_merge( $preserved, $translated_segments ); // translated, full path
+
+        // Rebuild the path, preserving the original trailing-slash behaviour.
+        $translated_path = '/' . implode( '/', $final_segments );
+        if ( '/' === substr( $parsed_url['path'], -1 ) ) {
+            $translated_path = trailingslashit( $translated_path );
         }
 
-        // Translate path segments to the target language.
-        $path_segments         = explode( '/', $url_path );
-        $translated_segments   = $this->translate_path_segments( $path_segments, $lang_code );
-        $language_switcher_url = trailingslashit( $base_url ) . trailingslashit( implode( '/', $translated_segments ) );
+        // Reassemble using the original (WPML-provided) components.
+        $scheme = isset( $parsed_url['scheme'] ) ? $parsed_url['scheme'] . '://' : '//';
+        $host   = $parsed_url['host'] ?? '';
+        $port   = isset( $parsed_url['port'] ) ? ':' . $parsed_url['port'] : '';
+        $query  = isset( $parsed_url['query'] ) ? '?' . $parsed_url['query'] : '';
 
-        // If the language negotiation type is parameter-based, append the language code as a query parameter.
-        if ( $is_parameter_based ) {
-            $language_switcher_url = add_query_arg(
-                [ 'lang' => $lang_code ],
-                $language_switcher_url
-            );
-        }
+        $language_switcher_url = $scheme . $host . $port . $translated_path . $query;
 
         return apply_filters(
             'dokan_wpml_get_language_switcher_url',
             $language_switcher_url,
             $path_segments,
-            $translated_segments,
+            $final_segments,
             $lang,
-            $base_url
+            $url
         );
     }
 
