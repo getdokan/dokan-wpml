@@ -1,3 +1,7 @@
+v1.1.15 -> Aug 10, 2026
+---------------------------
+- **update:** Bump version to 1.1.15.
+
 v1.1.14 -> Jul 02, 2026
 ---------------------------
 - **fix:** Corrected broken language switcher URLs when WPML uses a different domain per language.
