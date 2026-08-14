@@ -108,6 +108,13 @@ class Dokan_WPML {
         // mappings ourselves from the handles Dokan registers on the front end.
         add_action( 'wp_enqueue_scripts', [ $this, 'register_dokan_scripts_for_wpml_js_scanner' ], 9999 );
         add_action( 'wpml_reset_plugins_before', [ $this, 'clear_wpml_js_script_registry_hash' ] );
+
+        // WPML's registry can also disappear without wpml_reset_plugins_before
+        // firing — e.g. String Translation uninstalled and reinstalled, or its
+        // options lost in a migration. Re-registering after (re)activation of
+        // String Translation or this plugin costs one pass and self-heals those.
+        add_action( 'activated_plugin', [ $this, 'clear_hash_when_string_translation_activates' ] );
+        register_activation_hook( __FILE__, [ $this, 'clear_wpml_js_script_registry_hash' ] );
     }
 
     /**
@@ -2057,7 +2064,8 @@ class Dokan_WPML {
             return;
         }
 
-        $script_map = [];
+        $script_map   = [];
+        $relative_map = [];
 
         foreach ( wp_scripts()->registered as $handle => $script ) {
             if ( empty( $script->src ) || ! is_string( $script->src ) ) {
@@ -2066,7 +2074,8 @@ class Dokan_WPML {
 
             foreach ( $base_urls as $base_url ) {
                 if ( 0 === strpos( $script->src, $base_url ) ) {
-                    $script_map[ $handle ] = $script->src;
+                    $script_map[ $handle ]   = $script->src;
+                    $relative_map[ $handle ] = substr( $script->src, strlen( $base_url ) );
                     break;
                 }
             }
@@ -2077,16 +2086,27 @@ class Dokan_WPML {
         }
 
         // ScriptRegistry::register() writes options on every call — skip when
-        // the map is unchanged since the last successful registration. Sorted
-        // so registration order can never produce a false "changed" hash.
-        ksort( $script_map );
-        $hash = md5( wp_json_encode( $script_map ) );
+        // the map is unchanged since the last successful registration. The hash
+        // covers plugin-relative paths, not full URLs: WPML rewrites plugins_url()
+        // per request in domain-per-language mode, so absolute URLs would hash
+        // differently on every language domain and thrash the guard (WPML itself
+        // stores relative paths, so the registered data is domain-independent).
+        // Sorted so registration order can never produce a false "changed" hash.
+        ksort( $relative_map );
+        $hash = md5( wp_json_encode( $relative_map ) );
 
         if ( get_option( 'dokan_wpml_js_script_registry_hash' ) === $hash ) {
             return;
         }
 
-        \WPML\ST\StringsScanning\JS\ScriptRegistry::register( $script_map );
+        // ScriptRegistry is a WPML internal, not a public API — guard against a
+        // future signature/behavior change fataling every front-end request. On
+        // failure the hash is not written, so the call retries once WPML is fixed.
+        try {
+            \WPML\ST\StringsScanning\JS\ScriptRegistry::register( $script_map );
+        } catch ( \Throwable $e ) {
+            return;
+        }
 
         // Autoloaded: read on every front-end request and only 32 bytes —
         // autoloading saves the extra query.
@@ -2105,6 +2125,26 @@ class Dokan_WPML {
      */
     public function clear_wpml_js_script_registry_hash() {
         delete_option( 'dokan_wpml_js_script_registry_hash' );
+    }
+
+    /**
+     * Re-register scripts after WPML String Translation is (re)activated.
+     *
+     * Uninstalling String Translation drops its ScriptRegistry options without
+     * firing wpml_reset_plugins_before — after a reinstall the stored hash
+     * would still match and re-registration would never run. Clearing it on
+     * activation costs at most one extra registration pass.
+     *
+     * @since 1.1.16
+     *
+     * @param string $plugin Path of the activated plugin, relative to plugins dir.
+     *
+     * @return void
+     */
+    public function clear_hash_when_string_translation_activates( $plugin ) {
+        if ( false !== strpos( (string) $plugin, 'wpml-string-translation' ) ) {
+            $this->clear_wpml_js_script_registry_hash();
+        }
     }
 } // Dokan_WPML
 
