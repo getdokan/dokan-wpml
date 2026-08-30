@@ -8,3 +8,4 @@ includes/.DS_Store
 plugin-deploy.sh
 secret.json
 .svnignore
+/vendor
