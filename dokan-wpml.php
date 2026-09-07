@@ -100,11 +100,19 @@ class Dokan_WPML {
         add_action( 'added_option', [ $this, 'clear_option_cache' ] );
         add_action( 'deleted_option', [ $this, 'clear_option_cache' ] );
 
-        // Feed Dokan script handles to WPML's JS string scanner.
+        // WPML's JS string scanner drops strings from any .js file it cannot map
+        // to a script handle, and it only learns handle mappings from scripts
+        // actually printed on a page visited while WPML was active. Dokan's
+        // vendor-dashboard bundles never print for the admin running the scan,
+        // so their strings never reach String Translation. Register the
+        // mappings ourselves from the handles Dokan registers on the front end.
         add_action( 'wp_enqueue_scripts', [ $this, 'register_dokan_scripts_for_wpml_js_scanner' ], 9999 );
-
-        // Re-register when WPML's registry is reset, or String Translation reinstalled.
         add_action( 'wpml_reset_plugins_before', [ $this, 'clear_wpml_js_script_registry_hash' ] );
+
+        // WPML's registry can also disappear without wpml_reset_plugins_before
+        // firing — e.g. String Translation uninstalled and reinstalled, or its
+        // options lost in a migration. Re-registering after (re)activation of
+        // String Translation or this plugin costs one pass and self-heals those.
         add_action( 'activated_plugin', [ $this, 'clear_hash_when_string_translation_activates' ] );
         register_activation_hook( __FILE__, [ $this, 'clear_wpml_js_script_registry_hash' ] );
     }
@@ -2033,29 +2041,12 @@ class Dokan_WPML {
      * lets the scanner keep the strings under the correct per-handle JED
      * domain, so translations also flow back to the browser.
      *
-     * A few Dokan handles are page-conditional, so the set registered on a given
-     * request varies between pages. The guard therefore tracks the union of every
-     * handle submitted so far; registration stops once that union is complete,
-     * instead of flipping back and forth on each page change.
-     *
-     * Requires WPML String Translation 3.5 or newer for the ScriptRegistry API.
-     *
      * @since 1.1.16
      *
      * @return void
      */
     public function register_dokan_scripts_for_wpml_js_scanner() {
-        // Requires WPML String Translation >= 3.5 (JS string scanning). Logged so a
-        // future WPML rename surfaces instead of silently disabling the feature.
-        if ( ! class_exists( \WPML\ST\StringsScanning\JS\ScriptRegistry::class )
-            || ! method_exists( \WPML\ST\StringsScanning\JS\ScriptRegistry::class, 'register' ) ) {
-            // Throttled: String Translation being inactive is a valid setup, so this
-            // should not fill debug.log on every front-end request.
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG && ! get_transient( 'dokan_wpml_js_registry_unavailable' ) ) {
-                set_transient( 'dokan_wpml_js_registry_unavailable', 1, DAY_IN_SECONDS );
-                error_log( 'Dokan WPML: WPML ScriptRegistry unavailable; JS string handles not registered.' ); // phpcs:ignore
-            }
-
+        if ( ! class_exists( \WPML\ST\StringsScanning\JS\ScriptRegistry::class ) ) {
             return;
         }
 
@@ -2094,49 +2085,32 @@ class Dokan_WPML {
             return;
         }
 
+        // ScriptRegistry::register() writes options on every call — skip when
+        // the map is unchanged since the last successful registration. The hash
+        // covers plugin-relative paths, not full URLs: WPML rewrites plugins_url()
+        // per request in domain-per-language mode, so absolute URLs would hash
+        // differently on every language domain and thrash the guard (WPML itself
+        // stores relative paths, so the registered data is domain-independent).
+        // Sorted so registration order can never produce a false "changed" hash.
         ksort( $relative_map );
-
-        // Fast path: this request already covers everything submitted so far.
         $hash = md5( wp_json_encode( $relative_map ) );
 
         if ( get_option( 'dokan_wpml_js_script_registry_hash' ) === $hash ) {
             return;
         }
 
-        // Some Dokan handles are page-conditional, so the per-request map differs
-        // between pages. Comparing only against this request's map made the guard
-        // flip on every page change and rewrite WPML's ~90KB registry option each
-        // time, so compare against every handle submitted so far instead.
-        $submitted = (array) get_option( 'dokan_wpml_js_script_registry_map', [] );
-
-        // Drop anything that is not a handle => path pair, so a corrupted option
-        // cannot leave a junk entry behind on every later merge.
-        $submitted = array_filter(
-            $submitted,
-            static function ( $path, $handle ) {
-                return is_string( $handle ) && is_string( $path );
-            },
-            ARRAY_FILTER_USE_BOTH
-        );
-
-        if ( ! array_diff_assoc( $relative_map, $submitted ) ) {
-            return;
-        }
-
-        $merged = array_merge( $submitted, $relative_map );
-        ksort( $merged );
-
-        // ScriptRegistry is a WPML internal, not a public API. Nothing is stored on
-        // failure, so the call retries on the next request.
+        // ScriptRegistry is a WPML internal, not a public API — guard against a
+        // future signature/behavior change fataling every front-end request. On
+        // failure the hash is not written, so the call retries once WPML is fixed.
         try {
             \WPML\ST\StringsScanning\JS\ScriptRegistry::register( $script_map );
         } catch ( \Throwable $e ) {
             return;
         }
 
-        // The map is not autoloaded (front-end only); the 32-byte hash is.
-        update_option( 'dokan_wpml_js_script_registry_map', $merged, false );
-        update_option( 'dokan_wpml_js_script_registry_hash', md5( wp_json_encode( $merged ) ), true );
+        // Autoloaded: read on every front-end request and only 32 bytes —
+        // autoloading saves the extra query.
+        update_option( 'dokan_wpml_js_script_registry_hash', $hash, true );
     }
 
     /**
@@ -2151,7 +2125,6 @@ class Dokan_WPML {
      */
     public function clear_wpml_js_script_registry_hash() {
         delete_option( 'dokan_wpml_js_script_registry_hash' );
-        delete_option( 'dokan_wpml_js_script_registry_map' );
     }
 
     /**
