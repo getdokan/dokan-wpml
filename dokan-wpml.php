@@ -2021,26 +2021,16 @@ class Dokan_WPML {
     /**
      * Feed Dokan script handle-to-file mappings to WPML's JS string scanner.
      *
-     * WPML String Translation's JS scanner (\WPML\ST\StringsScanning\JS\Scanner)
-     * discards every string found in a .js file unless its ScriptRegistry can
-     * map the file back to a registered script handle. WPML populates that
-     * registry from the script_loader_tag filter, so it only knows scripts that
-     * were actually printed on a page someone visited while WPML was active.
-     * Dokan's vendor-dashboard bundles (shipping, verification, etc.) only
-     * print for logged-in vendors, so the admin running the scan never creates
-     * the mapping and those strings never appear in String Translation
-     * (see getdokan/dokan-pro#5783). Registering every Dokan handle directly
-     * lets the scanner keep the strings under the correct per-handle JED
-     * domain, so translations also flow back to the browser.
+     * WPML discards strings from any .js file it cannot map to a script handle, and
+     * learns those mappings only from scripts printed on a visited page. Dokan's
+     * vendor-dashboard bundles never print for the admin running the scan, so their
+     * strings never reach String Translation (see getdokan/dokan-pro#5783).
      *
-     * The stored hash covers plugin-relative paths rather than full URLs, because
-     * WPML rewrites plugins_url() per request in domain-per-language mode and
-     * absolute URLs would differ on every language domain. A few Dokan handles are
-     * page-conditional, so the hash does change between page types and registration
-     * runs again; measured at ~2.9ms against a ~540ms page load.
+     * Hashing plugin-relative paths keeps the guard stable across language domains.
+     * Page-conditional handles make registration repeat between page types, measured
+     * at ~2.9ms against a ~540ms page load.
      *
-     * Requires WPML 4.9.0 with String Translation 3.5.0 or newer, the release that
-     * added JS string scanning and this ScriptRegistry API.
+     * Requires WPML 4.9.0 with String Translation 3.5.0 or newer.
      *
      * @since 1.1.16
      *
@@ -2106,10 +2096,9 @@ class Dokan_WPML {
     }
 
     /**
-     * Forget the last registered script map when WPML resets its data.
+     * Forget the last registered map so the next request registers again.
      *
-     * WPML "Reset and remove all data" drops the ScriptRegistry options, so
-     * the next front-end request must re-register regardless of the hash.
+     * WPML's reset drops its ScriptRegistry options, so the stored hash must go too.
      *
      * @since 1.1.16
      *
@@ -2120,12 +2109,10 @@ class Dokan_WPML {
     }
 
     /**
-     * Re-register scripts after WPML String Translation is (re)activated.
+     * Re-register after WPML String Translation is (re)activated.
      *
-     * Uninstalling String Translation drops its ScriptRegistry options without
-     * firing wpml_reset_plugins_before — after a reinstall the stored hash
-     * would still match and re-registration would never run. Clearing it on
-     * activation costs at most one extra registration pass.
+     * Reinstalling it drops WPML's registry without firing wpml_reset_plugins_before,
+     * so the stored hash would otherwise still match and registration never run.
      *
      * @since 1.1.16
      *
