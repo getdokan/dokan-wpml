@@ -2041,6 +2041,18 @@ class Dokan_WPML {
             return;
         }
 
+        // WPML only reads this registry when "Detect strings in JavaScript
+        // files" is enabled (off by default). Gate on the same setting its
+        // HooksFactory checks so we write no options while the feature is off;
+        // the first front-end request after it's enabled registers normally.
+        global $sitepress;
+
+        $st_settings = $sitepress ? (array) $sitepress->get_setting( 'st' ) : [];
+
+        if ( empty( $st_settings['detect_js_strings'] ) ) {
+            return;
+        }
+
         $base_urls = [];
 
         if ( defined( 'DOKAN_FILE' ) ) {
