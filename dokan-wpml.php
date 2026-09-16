@@ -1325,7 +1325,6 @@ class Dokan_WPML {
                 if ( ! empty( $wp_user_query->query_vars['store_category_query'] ) ) {
                     global $sitepress, $wpdb;
 
-                    $current_language = wpml_get_current_language();
                     $sitepress->switch_lang( $sitepress->get_default_language() );
                     $store_category_query = new WP_Tax_Query( $wp_user_query->query_vars['store_category_query'] );
                     $clauses              = $store_category_query->get_sql( $wpdb->users, 'ID' );
@@ -1333,7 +1332,8 @@ class Dokan_WPML {
                     $wp_user_query->query_fields = 'DISTINCT ' . $wp_user_query->query_fields;
                     $wp_user_query->query_from   .= $clauses['join'];
                     $wp_user_query->query_where  .= $clauses['where'];
-                    $sitepress->switch_lang( $current_language );
+                    // Only null closes a WPML language switch; a language code opens a new one.
+                    $sitepress->switch_lang( null );
                 }
             }
         );
