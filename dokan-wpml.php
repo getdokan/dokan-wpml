@@ -2037,14 +2037,15 @@ class Dokan_WPML {
      * @return void
      */
     public function register_dokan_scripts_for_wpml_js_scanner() {
-        if ( ! class_exists( \WPML\ST\StringsScanning\JS\ScriptRegistry::class ) ) {
+        // Logged so a WPML rename or removal surfaces instead of silently disabling this.
+        if ( ! class_exists( \WPML\ST\StringsScanning\JS\ScriptRegistry::class )
+            || ! method_exists( \WPML\ST\StringsScanning\JS\ScriptRegistry::class, 'register' ) ) {
+            $this->log_wpml_js_registry_unavailable( 'WPML ScriptRegistry unavailable' );
+
             return;
         }
 
-        // WPML only reads this registry when "Detect strings in JavaScript
-        // files" is enabled (off by default). Gate on the same setting its
-        // HooksFactory checks so we write no options while the feature is off;
-        // the first front-end request after it's enabled registers normally.
+        // Like WPML's own script tracking, register only while "Detect strings in JavaScript files" is enabled.
         global $sitepress;
 
         $st_settings = $sitepress ? (array) $sitepress->get_setting( 'st' ) : [];
@@ -2100,11 +2101,33 @@ class Dokan_WPML {
         try {
             \WPML\ST\StringsScanning\JS\ScriptRegistry::register( $script_map );
         } catch ( \Throwable $e ) {
+            $this->log_wpml_js_registry_unavailable( 'WPML ScriptRegistry::register() failed: ' . $e->getMessage(), 'dokan_wpml_js_registry_failed' );
+
             return;
         }
 
         // Autoloaded: 32 bytes, read on every front-end request.
         update_option( 'dokan_wpml_js_script_registry_hash', $hash, true );
+    }
+
+    /**
+     * Log, throttled to once a day under WP_DEBUG, why Dokan scripts were not registered with WPML.
+     *
+     * @since 1.1.16
+     *
+     * @param string $reason   Why registration did not happen.
+     * @param string $throttle Transient that limits this reason to one line a day.
+     *
+     * @return void
+     */
+    private function log_wpml_js_registry_unavailable( $reason, $throttle = 'dokan_wpml_js_registry_unavailable' ) {
+        if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG || get_transient( $throttle ) ) {
+            return;
+        }
+
+        // Throttled: String Translation being inactive is a valid setup.
+        set_transient( $throttle, 1, DAY_IN_SECONDS );
+        error_log( 'Dokan WPML: ' . $reason . '; JS string handles not registered.' ); // phpcs:ignore
     }
 
     /**
