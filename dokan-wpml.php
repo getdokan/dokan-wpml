@@ -2037,53 +2037,11 @@ class Dokan_WPML {
      * @return void
      */
     public function register_dokan_scripts_for_wpml_js_scanner() {
-        // Logged so a WPML rename or removal surfaces instead of silently disabling this.
-        if ( ! class_exists( \WPML\ST\StringsScanning\JS\ScriptRegistry::class )
-            || ! method_exists( \WPML\ST\StringsScanning\JS\ScriptRegistry::class, 'register' ) ) {
-            $this->log_wpml_js_registry_unavailable( 'WPML ScriptRegistry unavailable' );
-
+        if ( ! $this->is_wpml_js_scanner_ready() ) {
             return;
         }
 
-        // Like WPML's own script tracking, register only while "Detect strings in JavaScript files" is enabled.
-        global $sitepress;
-
-        $st_settings = $sitepress ? (array) $sitepress->get_setting( 'st' ) : [];
-
-        if ( empty( $st_settings['detect_js_strings'] ) ) {
-            return;
-        }
-
-        $base_urls = [];
-
-        if ( defined( 'DOKAN_FILE' ) ) {
-            $base_urls[] = plugin_dir_url( DOKAN_FILE );
-        }
-
-        if ( defined( 'DOKAN_PRO_FILE' ) ) {
-            $base_urls[] = plugin_dir_url( DOKAN_PRO_FILE );
-        }
-
-        if ( ! $base_urls ) {
-            return;
-        }
-
-        $script_map   = [];
-        $relative_map = [];
-
-        foreach ( wp_scripts()->registered as $handle => $script ) {
-            if ( empty( $script->src ) || ! is_string( $script->src ) ) {
-                continue;
-            }
-
-            foreach ( $base_urls as $base_url ) {
-                if ( 0 === strpos( $script->src, $base_url ) ) {
-                    $script_map[ $handle ]   = $script->src;
-                    $relative_map[ $handle ] = substr( $script->src, strlen( $base_url ) );
-                    break;
-                }
-            }
-        }
+        list( $script_map, $relative_map ) = $this->get_dokan_script_maps( $this->get_dokan_script_base_urls() );
 
         if ( ! $script_map ) {
             return;
@@ -2108,6 +2066,85 @@ class Dokan_WPML {
 
         // Autoloaded: 32 bytes, read on every front-end request.
         update_option( 'dokan_wpml_js_script_registry_hash', $hash, true );
+    }
+
+    /**
+     * Check that WPML's JS string detection is enabled and its ScriptRegistry API is usable.
+     *
+     * @since 1.1.16
+     *
+     * @return bool
+     */
+    private function is_wpml_js_scanner_ready() {
+        // Like WPML's own script tracking, register only while "Detect strings in JavaScript files" is enabled.
+        global $sitepress;
+
+        $st_settings = $sitepress ? (array) $sitepress->get_setting( 'st' ) : [];
+
+        if ( empty( $st_settings['detect_js_strings'] ) ) {
+            return false;
+        }
+
+        // Logged so a WPML rename or removal surfaces instead of silently disabling this.
+        if ( ! class_exists( \WPML\ST\StringsScanning\JS\ScriptRegistry::class )
+            || ! method_exists( \WPML\ST\StringsScanning\JS\ScriptRegistry::class, 'register' ) ) {
+            $this->log_wpml_js_registry_unavailable( 'WPML ScriptRegistry unavailable' );
+
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Get the base URLs of the active Dokan Lite and Pro plugins.
+     *
+     * @since 1.1.16
+     *
+     * @return string[]
+     */
+    private function get_dokan_script_base_urls() {
+        $base_urls = [];
+
+        if ( defined( 'DOKAN_FILE' ) ) {
+            $base_urls[] = plugin_dir_url( DOKAN_FILE );
+        }
+
+        if ( defined( 'DOKAN_PRO_FILE' ) ) {
+            $base_urls[] = plugin_dir_url( DOKAN_PRO_FILE );
+        }
+
+        return $base_urls;
+    }
+
+    /**
+     * Map every registered Dokan script handle to its full URL and to its plugin-relative path.
+     *
+     * @since 1.1.16
+     *
+     * @param string[] $base_urls Base URLs of the Dokan plugins.
+     *
+     * @return array[] Full-URL map, then relative-path map, both keyed by handle.
+     */
+    private function get_dokan_script_maps( $base_urls ) {
+        $script_map   = [];
+        $relative_map = [];
+
+        foreach ( wp_scripts()->registered as $handle => $script ) {
+            if ( empty( $script->src ) || ! is_string( $script->src ) ) {
+                continue;
+            }
+
+            foreach ( $base_urls as $base_url ) {
+                if ( 0 === strpos( $script->src, $base_url ) ) {
+                    $script_map[ $handle ]   = $script->src;
+                    $relative_map[ $handle ] = substr( $script->src, strlen( $base_url ) );
+                    break;
+                }
+            }
+        }
+
+        return [ $script_map, $relative_map ];
     }
 
     /**
