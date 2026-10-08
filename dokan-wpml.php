@@ -162,7 +162,7 @@ class Dokan_WPML {
         add_filter( 'dokan_vendor_subscription_product_count_query', [ $this, 'set_vendor_subscription_product_count_query' ],10 ,3 );
         add_action( 'dokan_rewrite_rules_loaded', [ $this, 'register_custom_endpoint'] );
 
-		add_action( 'init', [ $this, 'fix_store_category_query_arg' ], 10 );
+		add_action( 'init', [ $this, 'fix_store_category_query_arg' ], 20 );
 		add_action( 'init', [ $this, 'load_wpml_admin_post_actions' ], 10 );
 		add_action( 'dokan_product_change_status_after_save', [ $this, 'change_product_status' ], 10, 2 );
 		add_action( 'dokan_product_status_revert_after_save', [ $this, 'change_product_status' ], 10, 2 );
@@ -1312,7 +1312,8 @@ class Dokan_WPML {
                 foreach ( $store_categories as &$category ) {
                     $slug             = urldecode( $category['slug'] ); // decode the percent encoding
                     $slug             = str_replace( '\\', '\\\\', $slug ); // escape the backslashes
-                    $category['slug'] = json_decode( '"' . $slug . '"' ); // parse as JSON
+                    $decoded          = json_decode( '"' . $slug . '"' ); // parse as JSON
+                    $category['slug'] = is_string( $decoded ) ? $decoded : $category['slug']; // keep the original slug if it can't be decoded
                 }
 
                 return $store_categories;
@@ -1356,17 +1357,17 @@ class Dokan_WPML {
                 continue;
             }
 
-            $tt_ids = get_terms(
-                [
-                    'taxonomy'   => 'store_category',
-                    'slug'       => (array) $clause['terms'],
-                    'fields'     => 'tt_ids',
-                    'hide_empty' => false,
-                ]
-            );
+            // Blank slugs must match nothing, not every category.
+            $slugs  = array_filter( array_map( 'trim', array_map( 'strval', (array) $clause['terms'] ) ), 'strlen' );
+            $tt_ids = [];
 
-            if ( is_wp_error( $tt_ids ) ) {
-                continue;
+            foreach ( $slugs as $slug ) {
+                // get_term_by() isn't limited to the current language, so a category without a translation here is still found.
+                $term = get_term_by( 'slug', $slug, 'store_category' );
+
+                if ( $term instanceof WP_Term ) {
+                    $tt_ids[] = $term->term_taxonomy_id;
+                }
             }
 
             $translated = [];
