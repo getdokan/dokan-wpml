@@ -162,7 +162,7 @@ class Dokan_WPML {
         add_filter( 'dokan_vendor_subscription_product_count_query', [ $this, 'set_vendor_subscription_product_count_query' ],10 ,3 );
         add_action( 'dokan_rewrite_rules_loaded', [ $this, 'register_custom_endpoint'] );
 
-		add_action( 'init', [ $this, 'fix_store_category_query_arg' ], 10 );
+		add_action( 'init', [ $this, 'fix_store_category_query_arg' ], 20 );
 		add_action( 'init', [ $this, 'load_wpml_admin_post_actions' ], 10 );
 		add_action( 'dokan_product_change_status_after_save', [ $this, 'change_product_status' ], 10, 2 );
 		add_action( 'dokan_product_status_revert_after_save', [ $this, 'change_product_status' ], 10, 2 );
@@ -1299,7 +1299,7 @@ class Dokan_WPML {
         if (
             ! function_exists( 'dokan_is_store_categories_feature_on' ) ||
             ! dokan_is_store_categories_feature_on() ||
-            ! empty( dokan_pro()->store_category ) ) {
+            empty( dokan_pro()->store_category ) ) {
             return;
         }
 
@@ -1312,7 +1312,8 @@ class Dokan_WPML {
                 foreach ( $store_categories as &$category ) {
                     $slug             = urldecode( $category['slug'] ); // decode the percent encoding
                     $slug             = str_replace( '\\', '\\\\', $slug ); // escape the backslashes
-                    $category['slug'] = json_decode( '"' . $slug . '"' ); // parse as JSON
+                    $decoded          = json_decode( '"' . $slug . '"' ); // parse as JSON
+                    $category['slug'] = is_string( $decoded ) ? $decoded : $category['slug']; // keep the original slug if it can't be decoded
                 }
 
                 return $store_categories;
@@ -1323,20 +1324,70 @@ class Dokan_WPML {
         add_action(
             'pre_user_query', function ( $wp_user_query ) {
                 if ( ! empty( $wp_user_query->query_vars['store_category_query'] ) ) {
-                    global $sitepress, $wpdb;
+                    global $wpdb;
 
-                    $current_language = wpml_get_current_language();
-                    $sitepress->switch_lang( $sitepress->get_default_language() );
-                    $store_category_query = new WP_Tax_Query( $wp_user_query->query_vars['store_category_query'] );
+                    $store_category_query = new WP_Tax_Query( $this->add_store_category_translations( $wp_user_query->query_vars['store_category_query'] ) );
                     $clauses              = $store_category_query->get_sql( $wpdb->users, 'ID' );
 
                     $wp_user_query->query_fields = 'DISTINCT ' . $wp_user_query->query_fields;
                     $wp_user_query->query_from   .= $clauses['join'];
                     $wp_user_query->query_where  .= $clauses['where'];
-                    $sitepress->switch_lang( $current_language );
                 }
             }
         );
+    }
+
+    /**
+     * Match every translation of the queried store categories.
+     *
+     * @since 1.1.16
+     *
+     * @param array $tax_query Store category tax query.
+     *
+     * @return array
+     */
+    public function add_store_category_translations( $tax_query ) {
+        foreach ( $tax_query as &$clause ) {
+            // Pro sends slug clauses with the default IN operator; anything else is left to WP_Tax_Query.
+            if (
+                ! is_array( $clause ) ||
+                'store_category' !== ( $clause['taxonomy'] ?? '' ) ||
+                'slug' !== ( $clause['field'] ?? '' ) ||
+                'IN' !== strtoupper( $clause['operator'] ?? 'IN' ) ) {
+                continue;
+            }
+
+            // Blank slugs must match nothing, not every category.
+            $slugs  = array_filter( array_map( 'trim', array_map( 'strval', (array) $clause['terms'] ) ), 'strlen' );
+            $tt_ids = [];
+
+            foreach ( $slugs as $slug ) {
+                // get_term_by() isn't limited to the current language, so a category without a translation here is still found.
+                $term = get_term_by( 'slug', $slug, 'store_category' );
+
+                if ( $term instanceof WP_Term ) {
+                    $tt_ids[] = $term->term_taxonomy_id;
+                }
+            }
+
+            $translated = [];
+            foreach ( $tt_ids as $tt_id ) {
+                $translated[] = (int) $tt_id;
+                $trid         = apply_filters( 'wpml_element_trid', null, $tt_id, 'tax_store_category' );
+                $translations = $trid ? apply_filters( 'wpml_get_element_translations', null, $trid, 'tax_store_category' ) : [];
+
+                foreach ( is_array( $translations ) ? $translations : [] as $translation ) {
+                    $translated[] = (int) $translation->element_id;
+                }
+            }
+
+            // term_taxonomy_id skips WP_Tax_Query's get_terms() lookup, which WPML limits to the current language.
+            $clause['field'] = 'term_taxonomy_id';
+            $clause['terms'] = array_values( array_unique( array_filter( $translated ) ) );
+        }
+        unset( $clause );
+
+        return $tax_query;
     }
 
 	/**
