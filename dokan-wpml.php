@@ -1368,7 +1368,9 @@ class Dokan_WPML {
 			return;
 		}
 
-		$wpml_admin_post_actions = new WPML_Admin_Post_Actions( $sitepress->get_settings(), $wpdb );
+		// Passed by reference, so it has to be a variable.
+		$settings                = $sitepress->get_settings();
+		$wpml_admin_post_actions = new WPML_Admin_Post_Actions( $settings, $wpdb );
 		$wpml_admin_post_actions->init();
 	}
 
