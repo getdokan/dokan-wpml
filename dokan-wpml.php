@@ -1349,7 +1349,7 @@ class Dokan_WPML {
 	public function load_wpml_admin_post_actions() {
 		global $wpdb, $sitepress, $wpml_post_translations;
 
-		// WPML already loaded its admin post actions (wp-admin, WP-CLI, editor-initiated REST); a second instance would double-handle every save.
+		// WPML already loaded its admin post actions (wp-admin, WP-CLI); a second instance would double-handle every save.
 		if ( is_admin() || $wpml_post_translations instanceof WPML_Admin_Post_Actions ) {
 			return;
 		}
