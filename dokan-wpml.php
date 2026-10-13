@@ -1347,23 +1347,20 @@ class Dokan_WPML {
 	 * @return void
 	 */
 	public function load_wpml_admin_post_actions() {
-		// WPML loads its own admin post actions on admin and WP-CLI requests; a second instance would double-handle every save.
-		if ( is_admin() || ( defined( 'WP_CLI' ) && WP_CLI ) ) {
+		global $wpdb, $sitepress, $wpml_post_translations;
+
+		// WPML already loaded its admin post actions (wp-admin, WP-CLI, editor-initiated REST); a second instance would double-handle every save.
+		if ( is_admin() || $wpml_post_translations instanceof WPML_Admin_Post_Actions ) {
 			return;
 		}
 
-		global $wpdb, $sitepress;
-
-		if ( ! class_exists( 'WPML_Admin_Post_Actions' ) || ! method_exists( $sitepress, 'get_settings' ) ) {
+		if ( ! class_exists( 'WPML_Admin_Post_Actions' ) || ! $sitepress instanceof SitePress || ! $sitepress->get_setting( 'setup_complete' ) ) {
 			return;
 		}
 
-		$settings               = $sitepress->get_settings();
-		$wpml_post_translations = new WPML_Admin_Post_Actions( $settings, $wpdb );
-
-		// WPML handles REST saves itself (#126); only the trash/untrash sync it skips on REST is kept.
+		// WPML handles REST saves itself (#126); only the trash/untrash sync its frontend handler leaves out is added.
 		if ( $this->is_rest_request() ) {
-			if ( ! empty( $settings['setup_complete'] ) ) {
+			if ( $wpml_post_translations instanceof WPML_Post_Translation ) {
 				add_action( 'wp_trash_post', [ $wpml_post_translations, 'trashed_post_actions' ] );
 				add_action( 'untrashed_post', [ $wpml_post_translations, 'untrashed_post_actions' ] );
 			}
@@ -1371,13 +1368,14 @@ class Dokan_WPML {
 			return;
 		}
 
-		$wpml_post_translations->init();
+		$wpml_admin_post_actions = new WPML_Admin_Post_Actions( $sitepress->get_settings(), $wpdb );
+		$wpml_admin_post_actions->init();
 	}
 
 	/**
 	 * Check whether the current request targets the REST API.
 	 *
-	 * Runs on init, before REST_REQUEST is defined, so the request itself is inspected.
+	 * Runs on init, before REST_REQUEST is defined, so WPML's own request analysis is used.
 	 *
 	 * @since 1.1.16
 	 *
@@ -1388,16 +1386,7 @@ class Dokan_WPML {
 			return (bool) wpml_is_rest_request();
 		}
 
-		if ( isset( $_REQUEST['rest_route'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			return true;
-		}
-
-		// Fallback for WPML without wpml_is_rest_request(): first path segment must be the REST prefix.
-		$path  = isset( $_SERVER['REQUEST_URI'] ) ? wp_parse_url( '/' . ltrim( wp_unslash( $_SERVER['REQUEST_URI'] ), '/' ), PHP_URL_PATH ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-		$path  = is_string( $path ) ? substr( $path, strlen( wp_parse_url( home_url( '/' ), PHP_URL_PATH ) ) ) : '';
-		$parts = explode( '/', ltrim( $path, '/' ) );
-
-		return isset( $parts[0] ) && rest_get_url_prefix() === $parts[0];
+		return isset( $_REQUEST['rest_route'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 	}
 
 	/**
