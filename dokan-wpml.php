@@ -1347,7 +1347,8 @@ class Dokan_WPML {
 	 * @return void
 	 */
 	public function load_wpml_admin_post_actions() {
-		if ( is_admin() ) {
+		// WPML loads its own admin post actions on admin, WP-CLI and editor-initiated REST requests; a second instance would double-handle every save (#126).
+		if ( is_admin() || $this->is_rest_request() || ( defined( 'WP_CLI' ) && WP_CLI ) ) {
 			return;
 		}
 
@@ -1358,6 +1359,31 @@ class Dokan_WPML {
 			$wpml_post_translations = new WPML_Admin_Post_Actions( $settings, $wpdb );
 			$wpml_post_translations->init();
 		}
+	}
+
+	/**
+	 * Check whether the current request targets the REST API.
+	 *
+	 * REST_REQUEST is only defined after init, so the request URI is checked as well.
+	 *
+	 * @since 1.1.16
+	 *
+	 * @return bool
+	 */
+	private function is_rest_request() {
+		if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
+			return true;
+		}
+
+		if ( isset( $_GET['rest_route'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			return true;
+		}
+
+		$path   = wp_parse_url( isset( $_SERVER['REQUEST_URI'] ) ? wp_unslash( $_SERVER['REQUEST_URI'] ) : '', PHP_URL_PATH ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$prefix = '/' . trim( rest_get_url_prefix(), '/' ) . '/';
+
+		// Matches /wp-json/, /fr/wp-json/ and sub-directory installs.
+		return is_string( $path ) && false !== strpos( trailingslashit( $path ), $prefix );
 	}
 
 	/**
