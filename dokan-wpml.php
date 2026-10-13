@@ -1347,43 +1347,57 @@ class Dokan_WPML {
 	 * @return void
 	 */
 	public function load_wpml_admin_post_actions() {
-		// WPML loads its own admin post actions on admin, WP-CLI and editor-initiated REST requests; a second instance would double-handle every save (#126).
-		if ( is_admin() || $this->is_rest_request() || ( defined( 'WP_CLI' ) && WP_CLI ) ) {
+		// WPML loads its own admin post actions on admin and WP-CLI requests; a second instance would double-handle every save.
+		if ( is_admin() || ( defined( 'WP_CLI' ) && WP_CLI ) ) {
 			return;
 		}
 
 		global $wpdb, $sitepress;
 
-		if ( class_exists( 'WPML_Admin_Post_Actions' ) && method_exists( $sitepress, 'get_settings' ) ) {
-			$settings = $sitepress->get_settings();
-			$wpml_post_translations = new WPML_Admin_Post_Actions( $settings, $wpdb );
-			$wpml_post_translations->init();
+		if ( ! class_exists( 'WPML_Admin_Post_Actions' ) || ! method_exists( $sitepress, 'get_settings' ) ) {
+			return;
 		}
+
+		$settings               = $sitepress->get_settings();
+		$wpml_post_translations = new WPML_Admin_Post_Actions( $settings, $wpdb );
+
+		// WPML handles REST saves itself (#126); only the trash/untrash sync it skips on REST is kept.
+		if ( $this->is_rest_request() ) {
+			if ( ! empty( $settings['setup_complete'] ) ) {
+				add_action( 'wp_trash_post', [ $wpml_post_translations, 'trashed_post_actions' ] );
+				add_action( 'untrashed_post', [ $wpml_post_translations, 'untrashed_post_actions' ] );
+			}
+
+			return;
+		}
+
+		$wpml_post_translations->init();
 	}
 
 	/**
 	 * Check whether the current request targets the REST API.
 	 *
-	 * REST_REQUEST is only defined after init, so the request URI is checked as well.
+	 * Runs on init, before REST_REQUEST is defined, so the request itself is inspected.
 	 *
 	 * @since 1.1.16
 	 *
 	 * @return bool
 	 */
 	private function is_rest_request() {
-		if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
+		if ( function_exists( 'wpml_is_rest_request' ) ) {
+			return (bool) wpml_is_rest_request();
+		}
+
+		if ( isset( $_REQUEST['rest_route'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			return true;
 		}
 
-		if ( isset( $_GET['rest_route'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			return true;
-		}
+		// Fallback for WPML without wpml_is_rest_request(): first path segment must be the REST prefix.
+		$path  = isset( $_SERVER['REQUEST_URI'] ) ? wp_parse_url( '/' . ltrim( wp_unslash( $_SERVER['REQUEST_URI'] ), '/' ), PHP_URL_PATH ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$path  = is_string( $path ) ? substr( $path, strlen( wp_parse_url( home_url( '/' ), PHP_URL_PATH ) ) ) : '';
+		$parts = explode( '/', ltrim( $path, '/' ) );
 
-		$path   = wp_parse_url( isset( $_SERVER['REQUEST_URI'] ) ? wp_unslash( $_SERVER['REQUEST_URI'] ) : '', PHP_URL_PATH ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-		$prefix = '/' . trim( rest_get_url_prefix(), '/' ) . '/';
-
-		// Matches /wp-json/, /fr/wp-json/ and sub-directory installs.
-		return is_string( $path ) && false !== strpos( trailingslashit( $path ), $prefix );
+		return isset( $parts[0] ) && rest_get_url_prefix() === $parts[0];
 	}
 
 	/**
