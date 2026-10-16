@@ -7,7 +7,7 @@ Tested up to: 6.8.2
 WC requires at least: 8.5.0
 WC tested up to: 10.2.2
 Requires PHP: 7.4
-Stable tag: 1.1.15
+Stable tag: 1.1.16
 License: GPL v2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -51,6 +51,13 @@ Ans: Yes, you can contact the WPML team. They offer translation service via thir
 nothing here
 
 == Changelog ==
+
+v1.1.16 -> Oct 16, 2026
+---------------------------
+- **fix:** Dokan's script strings (vendor shipping zones, verification settings and other dashboard screens) are now registered with WPML's JavaScript string scanner, so they can be found and translated in String Translation.
+- **fix:** The store list category filter now finds vendors whichever language they saved their store category in.
+- **fix:** Removed the WPML language switch from the store category query; it was left open for the rest of the request.
+- **fix:** WPML admin post actions are no longer loaded on REST requests, which relabeled products and detached translations during WPML translation deliveries.
 
 v1.1.15 -> Aug 10, 2026
 ---------------------------
