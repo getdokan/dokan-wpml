@@ -1406,17 +1406,48 @@ class Dokan_WPML {
 	 * @return void
 	 */
 	public function load_wpml_admin_post_actions() {
-		if ( is_admin() ) {
+		global $wpdb, $sitepress, $wpml_post_translations;
+
+		// WPML already loaded its admin post actions (wp-admin, WP-CLI); a second instance would double-handle every save.
+		if ( is_admin() || $wpml_post_translations instanceof WPML_Admin_Post_Actions ) {
 			return;
 		}
 
-		global $wpdb, $sitepress;
-
-		if ( class_exists( 'WPML_Admin_Post_Actions' ) && method_exists( $sitepress, 'get_settings' ) ) {
-			$settings = $sitepress->get_settings();
-			$wpml_post_translations = new WPML_Admin_Post_Actions( $settings, $wpdb );
-			$wpml_post_translations->init();
+		if ( ! class_exists( 'WPML_Admin_Post_Actions' ) || ! $sitepress instanceof SitePress || ! $sitepress->get_setting( 'setup_complete' ) ) {
+			return;
 		}
+
+		// WPML handles REST saves itself (#126); only the trash/untrash sync its frontend handler leaves out is added.
+		if ( $this->is_rest_request() ) {
+			if ( $wpml_post_translations instanceof WPML_Post_Translation ) {
+				add_action( 'wp_trash_post', [ $wpml_post_translations, 'trashed_post_actions' ] );
+				add_action( 'untrashed_post', [ $wpml_post_translations, 'untrashed_post_actions' ] );
+			}
+
+			return;
+		}
+
+		// Passed by reference, so it has to be a variable.
+		$settings                = $sitepress->get_settings();
+		$wpml_admin_post_actions = new WPML_Admin_Post_Actions( $settings, $wpdb );
+		$wpml_admin_post_actions->init();
+	}
+
+	/**
+	 * Check whether the current request targets the REST API.
+	 *
+	 * Runs on init, before REST_REQUEST is defined, so WPML's own request analysis is used.
+	 *
+	 * @since 1.1.16
+	 *
+	 * @return bool
+	 */
+	private function is_rest_request() {
+		if ( function_exists( 'wpml_is_rest_request' ) ) {
+			return (bool) wpml_is_rest_request();
+		}
+
+		return isset( $_REQUEST['rest_route'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 	}
 
 	/**
